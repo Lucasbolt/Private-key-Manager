@@ -18,3 +18,7 @@ export function getLogDir():string {
 export function getDatabaseDir() {
     return config.DB_DIR
 }
+
+export function getBackupDir () {
+    return config.BACKUP_DIR
+}

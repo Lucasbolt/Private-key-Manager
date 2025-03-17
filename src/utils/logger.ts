@@ -43,4 +43,5 @@ export function logError(error: string | Error) {
     logger.error(`[ERROR] ${error instanceof Error ? error.stack : error}`);
 }
 
+
 export default logger;
