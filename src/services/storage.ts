@@ -1,6 +1,6 @@
 import { Level } from 'level';
 import { encryptKey, decryptKey } from './encryption';
-import { getDatabaseDir } from '@src/utils/fileUtils';
+import { getDatabaseDir } from '@utils/fileUtils';
 
 let db: Level<string, string>;
 

@@ -1,5 +1,5 @@
 import fs from 'fs/promises';
-import config from '@src/config';
+import config from 'config';
 
 export async function fileExists(path: string): Promise<boolean> {
     try {

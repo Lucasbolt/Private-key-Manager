@@ -2,9 +2,9 @@ import crypto from 'crypto';
 import bcrypt from 'bcrypt'
 import fs from 'fs/promises';
 import path from 'path';
-import config from '@src/config';
-import { fileExists } from '@src/utils/fileUtils';
-import { ERROR_MESSAGES } from '@src/utils/error';
+import config from 'config';
+import { fileExists } from '@utils/fileUtils';
+import { ERROR_MESSAGES } from '@utils/error';
 const ALGORITHM = 'aes-256-gcm';
 const SALT_LENGTH = 16;
 const KEY_LENGTH = 32;

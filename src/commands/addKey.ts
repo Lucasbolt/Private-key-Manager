@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { storeKey, getKey } from '../services/storage';
+import { storeKey, getKey } from '@services/storage.js';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;

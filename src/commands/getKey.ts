@@ -1,4 +1,4 @@
-import { getKey } from "../services/storage";
+import { getKey } from "@services/storage";
 import inquirer from 'inquirer';
 
 export async function getKeyCommand() {

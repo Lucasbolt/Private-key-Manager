@@ -1,4 +1,4 @@
-import { deleteKey } from '../services/storage';
+import { deleteKey } from '@services/storage';
 import inquirer from 'inquirer';
 
 export async function removeKey() {
