@@ -5,7 +5,7 @@ import readline from 'readline';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file']; // Grant access to Google Drive
 
-async function getAuthenticatedClient() {
+export async function getAuthenticatedClient() {
     const credentials = JSON.parse(await fs.readFile('credentials.json', 'utf8'));
 
     const { client_secret, client_id, redirect_uris } = credentials.installed;
@@ -21,10 +21,14 @@ async function getAuthenticatedClient() {
 
     const code = await askQuestion('Enter the authorization code from the browser: ');
     const token = await auth.getToken(code);
-    auth.setCredentials(token.tokens);
 
-    await fs.writeFile('token.json', JSON.stringify(token.tokens, null, 2));
-    console.log('✅ Authentication successful! Token saved to token.json');
+    auth.on('tokens', async (token) => {
+        if (token.refresh_token) {
+            await fs.writeFile('token.json', JSON.stringify(token, null, 2));
+            console.log('✅ Authentication successful! Token saved to token.json');
+        }
+    })
+    auth.setCredentials(token.tokens);
 
     return auth;
 }

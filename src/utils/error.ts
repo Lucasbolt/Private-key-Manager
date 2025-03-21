@@ -5,4 +5,5 @@ export const ERROR_MESSAGES = {
     OPERATION_CANCELLED: 'Operation cancelled. No key was stored.',
     PASSWORD_REQUIRED: 'Password is required.',
     INVALID_PASSWORD: 'Password does not match',
+    UNINITIALIZED_AUTH: 'Credentials not set'
 }

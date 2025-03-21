@@ -1,19 +1,44 @@
 import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 import fs from 'fs/promises';
 import path from 'path';
-import { ACCESS_TYPE, RemoteBackupProvider } from '../lib';
+import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
+import { ERROR_MESSAGES } from '@utils/error.js';
+import { fileExists } from '@utils/fileUtils.js';
+import { getAuthenticatedClient } from './auth.js';
 
+export interface TOKEN {
+    access_toke: string,
+    refresh_token: string,
+    scope: string,
+    token_type: string,
+    refresh_token_expires_in: number,
+    expiry_date: number
+}
+
+export interface AUTH_CREDENTIALS extends Partial<TOKEN> {
+    refresh_token: string
+}
 
 export class GoogleDriveBackup implements RemoteBackupProvider {
     private auth: any;
+    private initializedWithAuth: boolean
     static type: ACCESS_TYPE = 'oauth';
 
-    constructor(authToken: any) {
+    constructor(authToken: AUTH_CREDENTIALS | null = null) {
         this.auth = new google.auth.OAuth2();
-        this.auth.setCredentials(authToken);
+        if (authToken) {
+            this.auth.setCredentials(authToken);
+            this.initializedWithAuth = true
+        } else {
+            this.initializedWithAuth = false
+        }
     }
 
     async uploadBackup(filePath: string, remotePath: string): Promise<void> {
+        if (!this.initializedWithAuth) {
+            throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+        }
         const drive = google.drive({ version: 'v3', auth: this.auth });
 
         const fileMetadata = {
@@ -34,6 +59,9 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
     }
 
     async downloadBackup(remotePath: string, localPath: string): Promise<void> {
+        if (!this.initializedWithAuth) {
+            throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+        }
         const drive = google.drive({ version: 'v3', auth: this.auth });
 
         const response = await drive.files.list({
@@ -54,7 +82,30 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
     }
 
     async loadAuthToken() {
-        const token = JSON.parse(await fs.readFile('token.json', 'utf8'));
+        const token:TOKEN = JSON.parse(await fs.readFile('token.json', 'utf8'));
         this.auth.setCredentials(token);
     }
+
+    initAuth(auth: OAuth2Client) {
+        this.auth = auth
+    }
+}
+
+
+export async function createGoogleDriveBackupInstance (
+    auth_credentials: AUTH_CREDENTIALS | null = null
+) {
+
+    if (auth_credentials) {
+        return new GoogleDriveBackup(auth_credentials)
+    }
+    if (await fileExists('token.json')) {
+        const instance = new GoogleDriveBackup()
+        await instance.loadAuthToken();
+        return instance;
+    }
+    const auth = await getAuthenticatedClient();
+    const instance = new GoogleDriveBackup()
+    instance.initAuth(auth)
+    return instance
 }
