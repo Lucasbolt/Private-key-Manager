@@ -46,3 +46,31 @@ export function decryptKey(secret_key: string, encryptedData: string): string {
     decrypted += decipher.final('utf-8');
     return decrypted;
 }
+
+
+export function encryptBackup(secretKey: Buffer, data: string): { encrypted: string; iv: string; authTag: string } {
+    const iv = crypto.randomBytes(16);
+    const cipher = crypto.createCipheriv(ALGORITHM, secretKey, iv);
+
+    let encrypted = cipher.update(data, 'utf-8', 'hex');
+    encrypted += cipher.final('hex');
+
+    return {
+        encrypted,
+        iv: iv.toString('hex'),
+        authTag: cipher.getAuthTag().toString('hex'),
+    };
+}
+
+/**
+ * Decrypts backup data using AES-256-GCM
+ */
+export function decryptBackup(secretKey: Buffer, encryptedData: { encrypted: string; iv: string; authTag: string }): string {
+    const { encrypted, iv, authTag } = encryptedData;
+    const decipher = crypto.createDecipheriv(ALGORITHM, secretKey, Buffer.from(iv, 'hex'));
+    decipher.setAuthTag(Buffer.from(authTag, 'hex'));
+
+    let decrypted = decipher.update(encrypted, 'hex', 'utf-8');
+    decrypted += decipher.final('utf-8');
+    return decrypted;
+}

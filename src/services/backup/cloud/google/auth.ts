@@ -42,4 +42,4 @@ function askQuestion(query: string): Promise<string> {
 }
 
 // Run authentication
-getAuthenticatedClient().catch(console.error);
+// getAuthenticatedClient().catch(console.error);

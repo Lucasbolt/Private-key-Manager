@@ -6,7 +6,7 @@ import { getBackupDir } from '@utils/fileUtils';
 import logger, { logAction, logError } from '@utils/logger';
 import { decryptBackup, encryptBackup } from '../encryption';
 
-export async function backupKeys(secret_key: string, filePath?: string): Promise<void> {
+export async function backupKeys(secret_key: string, filePath?: string): Promise<string> {
     const backupDir = getBackupDir();
     await fs.mkdir(backupDir, { recursive: true });
 
@@ -28,6 +28,7 @@ export async function backupKeys(secret_key: string, filePath?: string): Promise
     await fs.writeFile(backupFile, JSON.stringify(encryptedData, null, 2), 'utf-8');
 
     logAction(`✅ Encrypted backup saved to: ${backupFile}`);
+    return backupFile
 }
 
 export async function restoreKeys(secret_key: string, filePath: string, overwrite = false): Promise<void> {

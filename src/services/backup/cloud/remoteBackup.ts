@@ -1,17 +1,17 @@
 import { AUTH_CREDENTIALS, createGoogleDriveBackupInstance, GoogleDriveBackup } from "./google/googlDrive";
-import { S3Backup } from "./amazonS3/s3";
+// import { S3Backup } from "./amazonS3/s3";
 import { ACCESS_TYPE } from "./lib";
 
 
-interface BackupProvider {
+export interface BackupProvider {
     new(...args: any[]): any,
     type: ACCESS_TYPE
 }
-interface GoogleProviderOption extends AUTH_CREDENTIALS {}
+export interface GoogleProviderOption extends AUTH_CREDENTIALS {}
 
 const PROVIDERS: Record<string, BackupProvider> = {
     google_drive: GoogleDriveBackup,
-    amazon_s3: S3Backup
+    // amazon_s3: S3Backup
 }
 
 export function getProvider (provider: string): BackupProvider | null {
@@ -31,7 +31,7 @@ export async function createProviderInstance(
 ) {
     if (provider.type === 'oauth') {
         //create and return google instance
-        createGoogleDriveBackupInstance(providerOptions)   
+        return await createGoogleDriveBackupInstance(providerOptions)   
     }
 
     if (provider.type === 'access_key') {
