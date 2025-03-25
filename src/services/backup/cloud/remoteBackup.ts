@@ -2,14 +2,13 @@ import { AUTH_CREDENTIALS, createGoogleDriveBackupInstance, GoogleDriveBackup } 
 // import { S3Backup } from "./amazonS3/s3";
 import { ACCESS_TYPE } from "./lib";
 
-
 export interface BackupProvider {
     new(...args: any[]): any,
     type: ACCESS_TYPE
 }
 export interface GoogleProviderOption extends AUTH_CREDENTIALS {}
 
-const PROVIDERS: Record<string, BackupProvider> = {
+export const PROVIDERS: Record<string, BackupProvider> = {
     google_drive: GoogleDriveBackup,
     // amazon_s3: S3Backup
 }

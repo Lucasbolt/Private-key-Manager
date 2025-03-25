@@ -40,7 +40,7 @@ export async function setupMasterPassword(password: string): Promise<void> {
     }
     const passwordHash = await hashPassword(password)
     const salt = crypto.randomBytes(SALT_LENGTH);
-    const key = generateKey(password, salt);
+    generateKey(password, salt);
     return await fs.writeFile(config.AUTH_FILE, JSON.stringify({ salt: salt.toString('hex'), passwordHash }));
 }
 

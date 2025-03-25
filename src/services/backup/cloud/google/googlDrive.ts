@@ -43,56 +43,77 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
         const credentials = JSON.parse(await fsPromises.readFile('credentials.json', 'utf8'));
         return credentials.installed;
     }
+
     async uploadBackup(filePath: string, remotePath: string): Promise<void> {
-        if (!this.initializedWithAuth) {
-            throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+        try {
+            if (!this.initializedWithAuth) {
+                throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+            }
+            const drive = google.drive({ version: 'v3', auth: this.auth });
+            const folderId = await this.createDirectory(DEFAULT_DIR)
+            const fileMetadata = {
+                name: path.basename(remotePath),
+                ...(folderId && {parents: [folderId]})
+            };
+    
+            const media = {
+                mimeType: 'application/octet-stream',
+                body: fs.createReadStream(filePath),
+            };
+    
+            await drive.files.create({
+                requestBody: fileMetadata,
+                media: media,
+            });
+    
+            console.log(`✅ Backup uploaded to Google Drive: ${remotePath}`);
+        } catch (error) {
+            throw error
         }
-        const drive = google.drive({ version: 'v3', auth: this.auth });
-        const folderId = await this.createDirectory(DEFAULT_DIR)
-        const fileMetadata = {
-            name: path.basename(remotePath),
-            ...(folderId && {parents: [folderId]})
-        };
-
-        const media = {
-            mimeType: 'application/octet-stream',
-            body: fs.createReadStream(filePath),
-        };
-
-        await drive.files.create({
-            requestBody: fileMetadata,
-            media: media,
-        });
-
-        console.log(`✅ Backup uploaded to Google Drive: ${remotePath}`);
     }
 
     async downloadBackup(remotePath: string, localPath: string): Promise<void> {
-        if (!this.initializedWithAuth) {
-            throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+        try {
+            if (!this.initializedWithAuth) {
+                throw new Error (ERROR_MESSAGES.UNINITIALIZED_AUTH)
+            }
+            const drive = google.drive({ version: 'v3', auth: this.auth });
+            const folderId = await this.createDirectory(DEFAULT_DIR)
+            const response = await drive.files.list({
+                q: `name = "${path.basename(remotePath)}" ${folderId ? `and "${folderId}" in parents` : ''}`,
+                fields: 'files(id)'
+            });
+    
+            if (!response.data.files || response.data.files.length === 0) {
+                throw new Error(`❌ File ${remotePath} not found on Google Drive`);
+            }
+    
+            const fileId = response.data.files[0].id!;
+            const file = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
+    
+            const writeStream = await fsPromises.open(localPath, 'w');
+            file.data.pipe(writeStream.createWriteStream());
+    
+            console.log(`✅ Backup downloaded from Google Drive: ${localPath}`);
+        } catch (error) {
+            throw error
         }
-        const drive = google.drive({ version: 'v3', auth: this.auth });
-
-        const response = await drive.files.list({
-            q: `name = '${path.basename(remotePath)}'`,
-        });
-
-        if (!response.data.files || response.data.files.length === 0) {
-            throw new Error(`❌ File ${remotePath} not found on Google Drive`);
-        }
-
-        const fileId = response.data.files[0].id!;
-        const file = await drive.files.get({ fileId, alt: 'media' }, { responseType: 'stream' });
-
-        const writeStream = await fsPromises.open(localPath, 'w');
-        file.data.pipe(writeStream.createWriteStream());
-
-        console.log(`✅ Backup downloaded from Google Drive: ${localPath}`);
     }
 
     async loadAuthToken() {
         const token:TOKEN = JSON.parse(await fsPromises.readFile('token.json', 'utf8'));
         this.auth.setCredentials(token);
+        this.auth.on('tokens', async (newTokens: Record<string, any>) => {
+            console.log('Tokens refreshed:', newTokens);
+            if (newTokens.refresh_token) {
+              // Update stored tokens if a new refresh token is issued
+              await fsPromises.writeFile('token.json', JSON.stringify(newTokens));
+            } else {
+              // Update only access token and expiry
+              const currentTokens = JSON.parse(await fsPromises.readFile('token.json', 'utf8'));
+              await fsPromises.writeFile('token.json', JSON.stringify({ ...currentTokens, ...newTokens }));
+            }
+          });
         this.initializedWithAuth = true
     }
 
@@ -107,7 +128,7 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
 
             const drive = google.drive({ version: 'v3', auth: this.auth });
             const folderQuery = await drive.files.list({
-                q: `name="${directoryName}" mimeType="application/vnd.google-apps.folder" ${parentId ? `"${parentId}" in parents` : ''} trashed=false`,
+                q: `name="${directoryName}" and mimeType="application/vnd.google-apps.folder" ${parentId ? `and "${parentId}" in parents` : ''}`,
                 fields: 'files(id)',
                 spaces: 'drive',
             });
@@ -137,11 +158,11 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
         }
     }
 
-    async listFilesInDirectory(directoryName:string, parentId: string | null = null) {
+    async listFilesInDirectory(directoryName:string = DEFAULT_DIR, parentId: string | null = null) {
         try {
             const drive = google.drive({ version: 'v3', auth: this.auth });
             const folderQuery = await drive.files.list({
-                q: `name="${directoryName}" mimeType="application/vnd.google-apps.folder" ${parentId ? `"${parentId}" in parents` : ''} trashed=false`,
+                q: `name="${directoryName}" and mimeType="application/vnd.google-apps.folder" ${parentId ? `and "${parentId}" in parents` : ''}`,
                 fields: 'files(id)',
                 spaces: 'drive',
             });
@@ -157,7 +178,7 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
         
             // Step 2: List files in the directory
             const fileQuery = await drive.files.list({
-                q: `"${folderId}" in parents -mimeType="application/vnd.google-apps.folder"`, // Exclude subfolders
+                q: `"${folderId}" in parents and mimeType != "application/vnd.google-apps.folder"`, // Exclude subfolders
                 fields: 'files(id, name)',
                 spaces: 'drive',
             });

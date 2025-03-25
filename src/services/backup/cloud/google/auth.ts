@@ -11,6 +11,23 @@ export async function getAuthenticatedClient() {
     const { client_secret, client_id, redirect_uris } = credentials.installed;
     const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
 
+    auth.on('tokens', async (token) => {
+        try {
+          if (token.refresh_token) {
+            // Initial token with refresh_token
+            await fs.writeFile('token.json', JSON.stringify(token, null, 2));
+            console.log('✅ Initial token saved to token.json');
+          } else {
+            // Refreshed token (no refresh_token, just access_token)
+            const currentTokens = JSON.parse(await fs.readFile('token.json', 'utf8'));
+            await fs.writeFile('token.json', JSON.stringify({ ...currentTokens, ...token }, null, 2));
+            console.log('✅ Refreshed token updated in token.json');
+          }
+        } catch (error) {
+          console.error('❌ Failed to save tokens:', (error as Error).message);
+        }
+    });
+
     const authUrl = auth.generateAuthUrl({
         access_type: 'offline',
         scope: SCOPES,
@@ -20,14 +37,9 @@ export async function getAuthenticatedClient() {
     await open(authUrl);
 
     const code = await askQuestion('Enter the authorization code from the browser: ');
-    const token = await auth.getToken(code);
 
-    auth.on('tokens', async (token) => {
-        if (token.refresh_token) {
-            await fs.writeFile('token.json', JSON.stringify(token, null, 2));
-            console.log('✅ Authentication successful! Token saved to token.json');
-        }
-    })
+    const token = await auth.getToken(code);
+    console.log(token)
     auth.setCredentials(token.tokens);
 
     return auth;

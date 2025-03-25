@@ -20,16 +20,16 @@ export async function storeKey(secret_key: string, alias: string, privateKey: st
 }
 
 // Retrieve and decrypt key
-export async function getKey(secret_key: string, alias: string): Promise<string> {
+export async function getKey(secret_key: string, alias: string): Promise<string | null> {
     try {
         const normalizedAlias = alias.trim().toLowerCase();
         const encryptedData = await getDbInstance().get(normalizedAlias);
+        if(!encryptedData) {
+            return null
+        }
         return decryptKey(secret_key, encryptedData);
     } catch (error) {
-        if ((error as any).notFound) {
-            throw new Error(`Key '${alias}' not found.`);
-        }
-        throw new Error('Invalid password or corrupted data.');
+        throw error;
     }
 }
 

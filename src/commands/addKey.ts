@@ -1,5 +1,6 @@
 import inquirer from 'inquirer';
 import { storeKey, getKey } from '@services/storage.js';
+import { loadEncryptionKey } from '@services/auth';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;
@@ -42,7 +43,12 @@ export async function addKey() {
         { type: 'input', name: 'alias', message: 'Enter key alias:' },
     ]);
 
-    const existingKey = await getKey(alias);
+    const { password } = await inquirer.prompt([
+        { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
+    ]);
+
+    const secretKey = await loadEncryptionKey(password)
+    const existingKey = await getKey(secretKey.toString(), alias);
     if (existingKey) {
         console.log(`⚠️ Key '${alias}' already exists.`);
         
@@ -55,10 +61,8 @@ export async function addKey() {
             return;
         }
     }
-
     const privateKey = await promptForPrivateKey();
     if (!privateKey) return;
-
-    await storeKey(alias, privateKey);
+    await storeKey(secretKey.toString(), alias, privateKey);
     console.log(`✅ Key '${alias}' stored securely.`);
 }

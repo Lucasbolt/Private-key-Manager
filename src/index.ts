@@ -11,6 +11,7 @@ import { fileExists } from '@utils/fileUtils';
 import config from 'config';
 import inquirer from 'inquirer';
 import { setupMasterPassword } from '@services/auth';
+import { restoreBackup } from 'commands/restoreBackup';
 
 const program = new Command();
 
@@ -85,4 +86,8 @@ program
     .description('Backup private keys')
     .action(testBackup);
 
+program
+    .command('restore')
+    .description('Restore private keys data from backup files')
+    .action(restoreBackup)
 program.parse(process.argv);

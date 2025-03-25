@@ -49,7 +49,7 @@ export function decryptKey(secret_key: string, encryptedData: string): string {
 
 
 export function encryptBackup(secretKey: Buffer, data: string): { encrypted: string; iv: string; authTag: string } {
-    const iv = crypto.randomBytes(16);
+    const iv = crypto.randomBytes(IV_LENGTH);
     const cipher = crypto.createCipheriv(ALGORITHM, secretKey, iv);
 
     let encrypted = cipher.update(data, 'utf-8', 'hex');
@@ -66,6 +66,9 @@ export function encryptBackup(secretKey: Buffer, data: string): { encrypted: str
  * Decrypts backup data using AES-256-GCM
  */
 export function decryptBackup(secretKey: Buffer, encryptedData: { encrypted: string; iv: string; authTag: string }): string {
+    if (!encryptedData.encrypted || !encryptedData.iv || !encryptedData.authTag) {
+        throw new Error('Invalid encrypted data format');
+    }
     const { encrypted, iv, authTag } = encryptedData;
     const decipher = crypto.createDecipheriv(ALGORITHM, secretKey, Buffer.from(iv, 'hex'));
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
@@ -74,3 +77,13 @@ export function decryptBackup(secretKey: Buffer, encryptedData: { encrypted: str
     decrypted += decipher.final('utf-8');
     return decrypted;
 }
+
+
+// const secretKey = crypto.createHash('sha256').update('your-password').digest(); // Ensure consistency
+// const testData = 'Hello, backup!';
+
+// const encryptedData = encryptBackup(secretKey, testData);
+// console.log('Encrypted:', encryptedData);
+
+// const decryptedData = decryptBackup(secretKey, encryptedData);
+// console.log('Decrypted:', decryptedData);
