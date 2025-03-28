@@ -1,6 +1,7 @@
 import { Level } from 'level';
 import { encryptKey, decryptKey } from './encryption';
 import { getDatabaseDir } from '@utils/fileUtils';
+import { logAction, logError, logWarning } from '@utils/logger';
 
 let db: Level<string, string>;
 
@@ -17,6 +18,7 @@ export async function storeKey(secret_key: string, alias: string, privateKey: st
     const normalizedAlias = alias.trim().toLowerCase();
     const encryptedData = encryptKey(secret_key, privateKey);
     await getDbInstance().put(normalizedAlias, encryptedData);
+    logAction('Key stored', { alias: normalizedAlias });
 }
 
 // Retrieve and decrypt key
@@ -24,11 +26,14 @@ export async function getKey(secret_key: string, alias: string): Promise<string 
     try {
         const normalizedAlias = alias.trim().toLowerCase();
         const encryptedData = await getDbInstance().get(normalizedAlias);
-        if(!encryptedData) {
-            return null
+        if (!encryptedData) {
+            logWarning('Key not found', { alias: normalizedAlias });
+            return null;
         }
+        logAction('Key retrieved', { alias: normalizedAlias });
         return decryptKey(secret_key, encryptedData);
     } catch (error) {
+        logError('Error retrieving key', { alias, error });
         throw error;
     }
 }
@@ -36,13 +41,26 @@ export async function getKey(secret_key: string, alias: string): Promise<string 
 //the frontend should call the authorization functions before calling this
 export async function listKeys(): Promise<string[]> {
     const keys: string[] = [];
-    for await (const key of getDbInstance().keys()) {
-        keys.push(key);
+    try {
+        for await (const key of getDbInstance().keys()) {
+            keys.push(key);
+        }
+        logAction('Keys listed', { count: keys.length });
+    } catch (error) {
+        logError('Error listing keys', { error });
+        throw error;
     }
     return keys;
 }
 
 //the frontend should call the authorization functions before calling this
 export async function deleteKey(alias: string): Promise<void> {
-    await getDbInstance().del(alias.trim().toLowerCase());
+    const normalizedAlias = alias.trim().toLowerCase();
+    try {
+        await getDbInstance().del(normalizedAlias);
+        logAction('Key deleted', { alias: normalizedAlias });
+    } catch (error) {
+        logError('Error deleting key', { alias: normalizedAlias, error });
+        throw error;
+    }
 }

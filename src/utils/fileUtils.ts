@@ -15,10 +15,26 @@ export function getLogDir():string {
     return config.LOG_DIR
 }
 
-export function getDatabaseDir() {
+export function getAuthFilePath (): string {
+    return config.AUTH_FILE
+}
+
+export function getDatabaseDir(): string {
     return config.DB_DIR
 }
 
-export function getBackupDir () {
+export function getBackupDir (): string {
     return config.BACKUP_DIR
+}
+
+export function getCredentialsFilePath (): string {
+    return config.CREDENTIALS_FILE
+}
+
+export function getTokenFilePath (): string {
+    return config.TOKEN_FILE
+}
+
+export function getTempDir (): string {
+    return config.TEMP_DIR
 }

@@ -4,6 +4,7 @@ import { getVerifiedPassword } from './utils';
 import { backupKeys } from '@services/backup/backup';
 import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive';
 import path from 'path';
+import { cliLogger } from '@utils/cliLogger';
 
 async function selectBackupProvider(): Promise<string> {
     const { answer } = await inquirer.prompt([
@@ -19,38 +20,42 @@ async function selectBackupProvider(): Promise<string> {
 }
 
 async function performBackup(secretKey: string, providerName: string): Promise<void> {
-    console.log('Retrieving the backup provider...');
-    const provider = getProvider(providerName.toLowerCase().replace(' ', '_'));
-    if (!provider) {
-        throw new Error(`Unsupported provider: ${providerName}`);
+    try {
+        cliLogger.info('Retrieving the backup provider...');
+        const provider = getProvider(providerName.toLowerCase().replace(' ', '_'));
+        if (!provider) {
+            throw new Error(`Unsupported provider: ${providerName}`);
+        }
+
+        const providerInstance = await createProviderInstance(provider as BackupProvider);
+
+        cliLogger.info('Backing up keys...');
+        const backupLocation = await backupKeys(secretKey);
+
+        cliLogger.info('Uploading backup to the cloud...');
+        await (providerInstance as GoogleDriveBackup).uploadBackup(backupLocation, path.basename(backupLocation));
+
+        cliLogger.success('Backup process completed successfully.');
+    } catch (error) {
+        cliLogger.error('Error during backup process', (error as Error));
+        throw error;
     }
-
-    const providerInstance = await createProviderInstance(provider as BackupProvider);
-
-    console.log('Backing up keys...');
-    const backupLocation = await backupKeys(secretKey);
-
-    console.log('Uploading backup to the cloud...');
-    await (providerInstance as GoogleDriveBackup).uploadBackup(backupLocation, path.basename(backupLocation));
-
-    console.log('Backup process completed successfully.');
 }
 
 export async function testBackup(): Promise<void> {
-    console.log('Starting the backup process...');
-
+    cliLogger.info('Starting the backup process...');
     try {
         const secretKey = await getVerifiedPassword();
         if (!secretKey) {
-            console.warn('Password verification failed. Aborting backup process.');
+            cliLogger.warn('Password verification failed. Aborting backup process.');
             return;
         }
 
         const selectedProvider = await selectBackupProvider();
-        console.log(`You selected: ${selectedProvider}`);
+        cliLogger.info(`You selected: ${selectedProvider}`);
 
         await performBackup(secretKey.toString('hex'), selectedProvider);
     } catch (error) {
-        console.error('An error occurred during the backup process:', (error as Error).message || error);
+        cliLogger.error('An error occurred during the backup process', (error as Error));
     }
 }

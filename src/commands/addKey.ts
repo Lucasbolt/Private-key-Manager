@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import { storeKey, getKey } from '@services/storage.js';
 import { loadEncryptionKey } from '@services/auth';
+import { cliLogger } from '@utils/cliLogger';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;
@@ -28,10 +29,10 @@ async function promptForPrivateKey(): Promise<string | null> {
         const remainingAttempts = MAX_ATTEMPTS - attempt;
         
         if (remainingAttempts > 0) {
-            console.log(`❌ Private key must be at least ${MIN_KEY_LENGTH} characters long. ${remainingAttempts} attempts left.`);
+            cliLogger.warn(`Private key must be at least ${MIN_KEY_LENGTH} characters long. ${remainingAttempts} attempts left.`);
         }
     }
-    console.log('❌ Max attempts reached. Private key not stored.');
+    cliLogger.error('Max attempts reached. Private key not stored.');
     return null;
 }
 
@@ -39,30 +40,34 @@ async function promptForPrivateKey(): Promise<string | null> {
  * Adds a new private key securely.
  */
 export async function addKey() {
-    const { alias } = await inquirer.prompt([
-        { type: 'input', name: 'alias', message: 'Enter key alias:' },
-    ]);
-
-    const { password } = await inquirer.prompt([
-        { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
-    ]);
-
-    const secretKey = await loadEncryptionKey(password)
-    const existingKey = await getKey(secretKey.toString(), alias);
-    if (existingKey) {
-        console.log(`⚠️ Key '${alias}' already exists.`);
-        
-        const { overwrite } = await inquirer.prompt([
-            { type: 'confirm', name: 'overwrite', message: 'Do you want to overwrite the existing key?', default: false },
+    try {
+        const { alias } = await inquirer.prompt([
+            { type: 'input', name: 'alias', message: 'Enter key alias:' },
         ]);
 
-        if (!overwrite) {
-            console.log('❌ Operation cancelled. No key was stored.');
-            return;
+        const { password } = await inquirer.prompt([
+            { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
+        ]);
+
+        const secretKey = await loadEncryptionKey(password)
+        const existingKey = await getKey(secretKey.toString(), alias);
+        if (existingKey) {
+            cliLogger.warn(`Key '${alias}' already exists.`);
+            
+            const { overwrite } = await inquirer.prompt([
+                { type: 'confirm', name: 'overwrite', message: 'Do you want to overwrite the existing key?', default: false },
+            ]);
+
+            if (!overwrite) {
+                cliLogger.info('Operation cancelled. No key was stored.');
+                return;
+            }
         }
+        const privateKey = await promptForPrivateKey();
+        if (!privateKey) return;
+        await storeKey(secretKey.toString(), alias, privateKey);
+        cliLogger.success(`Key '${alias}' stored securely.`);
+    } catch (error) {
+        cliLogger.error('Error adding key', (error as Error));
     }
-    const privateKey = await promptForPrivateKey();
-    if (!privateKey) return;
-    await storeKey(secretKey.toString(), alias, privateKey);
-    console.log(`✅ Key '${alias}' stored securely.`);
 }

@@ -1,12 +1,16 @@
 import { deleteKey } from '@services/storage';
 import inquirer from 'inquirer';
 import { getVerifiedPassword } from './utils';
+import { cliLogger } from '@utils/cliLogger';
 
 export async function removeKey() {
-
     try {
-        const verifiedPassword = await getVerifiedPassword()
-        if (!verifiedPassword) return
+        const verifiedPassword = await getVerifiedPassword();
+        if (!verifiedPassword) {
+            cliLogger.warn('Password verification failed. Aborting operation.');
+            return;
+        }
+
         const { alias } = await inquirer.prompt([
             { type: 'input', name: 'alias', message: 'Enter key alias to delete:' },
         ]);
@@ -17,11 +21,11 @@ export async function removeKey() {
 
         if (confirm) {
             await deleteKey(alias);
-            console.log(`❌ Key '${alias}' deleted.`);
+            cliLogger.success(`Key '${alias}' deleted.`);
         } else {
-            console.log('Operation cancelled.');
+            cliLogger.info('Operation cancelled.');
         }
     } catch (error) {
-        console.error('Authorization failed:', (error as any).message);
+        cliLogger.error('Error deleting key', (error as Error));
     }
 }
