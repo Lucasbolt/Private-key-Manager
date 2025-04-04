@@ -5,7 +5,7 @@ import { fileExists, getAuthFilePath } from '@utils/fileUtils';
 import { ERROR_MESSAGES } from '@utils/error';
 import { logAction, logError } from '@utils/logger';
 
-const ALGORITHM = 'aes-256-gcm';
+// const ALGORITHM = 'aes-256-gcm';
 const SALT_LENGTH = 16;
 const KEY_LENGTH = 32;
 const ITERATIONS = 100000;

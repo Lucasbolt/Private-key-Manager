@@ -5,47 +5,68 @@ import open from 'open';
 import readline from 'readline';
 import { logAction, logError } from '@utils/logger';
 
-const SCOPES = ['https://www.googleapis.com/auth/drive.file']; // Grant access to Google Drive
+const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 
 const credentialsPath = getCredentialsFilePath();
 const tokenPath = getTokenFilePath();
 
-export async function getAuthenticatedClient() {
+async function loadCredentials(): Promise<any> {
     try {
         const credentials = JSON.parse(await fs.readFile(credentialsPath, 'utf8'));
         logAction('Google Drive credentials loaded successfully');
+        return credentials;
+    } catch (error) {
+        logError('Failed to load Google Drive credentials', { error });
+        throw error;
+    }
+}
 
-        const { client_secret, client_id, redirect_uris } = credentials.installed;
-        const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+async function loadToken(): Promise<any> {
+    try {
+        const token = JSON.parse(await fs.readFile(tokenPath, 'utf8'));
+        return token;
+    } catch (error) {
+        // Token file doesn't exist or is invalid
+        return null;
+    }
+}
 
-        auth.on('tokens', async (token) => {
-            try {
-                if (token.refresh_token) {
-                    await fs.writeFile(tokenPath, JSON.stringify(token, null, 2));
-                    logAction('Initial token saved to token.json');
-                } else {
-                    const currentTokens = JSON.parse(await fs.readFile(tokenPath, 'utf8'));
-                    await fs.writeFile(tokenPath, JSON.stringify({ ...currentTokens, ...token }, null, 2));
-                    logAction('Refreshed token updated in token.json');
-                }
-            } catch (error) {
-                logError('Failed to save tokens', { error });
-            }
-        });
+async function saveToken(token: any): Promise<void> {
+    try {
+        await fs.writeFile(tokenPath, JSON.stringify(token, null, 2));
+        logAction('Token saved to token.json');
+    } catch (error) {
+        logError('Failed to save token', { error });
+    }
+}
 
-        const authUrl = auth.generateAuthUrl({
-            access_type: 'offline',
-            scope: SCOPES,
-        });
+export async function getAuthenticatedClient(): Promise<any> {
+    try {
+        const credentials = await loadCredentials();
+        const token = await loadToken();
 
-        logAction('Generated Google Drive authentication URL');
-        console.log(`Open this URL in your browser:\n${authUrl}`);
-        await open(authUrl);
+        const { client_id, client_secret } = credentials.installed;
+        const auth = new google.auth.OAuth2(client_id, client_secret);
 
-        const code = await askQuestion('Enter the authorization code from the browser: ');
+        if (token) {
+            auth.setCredentials(token);
+        } else {
+            const authUrl = auth.generateAuthUrl({
+                access_type: 'offline',
+                scope: SCOPES,
+            });
 
-        const token = await auth.getToken(code);
-        auth.setCredentials(token.tokens);
+            logAction('Generated Google Drive authentication URL');
+            console.log(`Open this URL in your browser:\n${authUrl}`);
+            await open(authUrl);
+
+            const code = await askQuestion('Enter the authorization code from the browser: ');
+
+            const tokenResponse = await auth.getToken(code);
+            auth.setCredentials(tokenResponse.tokens);
+            await saveToken(tokenResponse.tokens);
+        }
+
         logAction('Google Drive authentication completed successfully');
         return auth;
     } catch (error) {

@@ -1,15 +1,14 @@
 import 'module-alias/register';
-import dotenv from 'dotenv';
+import 'dotenv/config';
 import chalk from 'chalk';
 import figlet from 'figlet';
-dotenv.config();
 import { Command } from 'commander';
 import { addKey } from './commands/addKey';
 import { listStoredKeys } from './commands/listKeys';
 import { removeKey } from './commands/deleteKey';
 import { getKeyCommand } from './commands/getKey';
 import { testBackup } from 'commands/backup';
-import { fileExists, getAuthFilePath } from '@utils/fileUtils';
+import { fileExists, getAuthFilePath, getTokenFilePath } from '@utils/fileUtils';
 import inquirer from 'inquirer';
 import { setupMasterPassword } from '@services/auth';
 import { restoreBackup } from 'commands/restoreBackup';
@@ -17,7 +16,7 @@ import { ensureStorageDirectory } from '@utils/storagePaths';
 import { cliLogger } from '@utils/cliLogger';
 
 const title = "Private Key Manager";
-
+console.log(getTokenFilePath())
 const Banner = async () => {
     try {
         const bannerText = figlet.textSync(title, {
@@ -32,7 +31,6 @@ const Banner = async () => {
         console.log(chalk.yellowBright('🔑 Welcome to the Private Key Manager CLI 🔑'));
         console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
         console.log(chalk.green.bold('==========================================\n'));
-        cliLogger.info('Banner displayed successfully');
     } catch (error) {
         cliLogger.error('Error displaying banner', (error as Error));
     }
@@ -126,7 +124,6 @@ program
 
 try {
     program.parse(process.argv);
-    cliLogger.info('CLI program executed successfully');
 } catch (error) {
     cliLogger.error('Error executing CLI program', (error as Error));
 }

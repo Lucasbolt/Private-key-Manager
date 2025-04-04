@@ -1,6 +1,7 @@
 import inquirer from 'inquirer';
 import { loadEncryptionKey } from '@services/auth';
 import { logAction, logError, logWarning } from '@utils/logger';
+import { cliFeedback as feedBack } from '@utils/cliFeedback';
 
 export async function getPassword(): Promise<string> {
     try {
@@ -33,14 +34,14 @@ export async function getVerifiedPassword(): Promise<Buffer<ArrayBufferLike> | n
         } catch (error) {
             if (remainingAttempts > 0) {
                 logWarning('Invalid password attempt', { attempt, remainingAttempts });
-                console.error(`❌ Invalid password. ${remainingAttempts} attempts left.`);
+                feedBack.warn(`Invalid password. ${remainingAttempts} attempts left.`);
             } else {
                 logError('Max password attempts reached', { attempt });
             }
         }
     }
 
-    console.error('❌ Max attempts reached. Operation failed.');
+    feedBack.error('Max attempts reached. Operation failed.');
     return null;
 }
 

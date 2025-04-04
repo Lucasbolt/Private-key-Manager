@@ -1,4 +1,5 @@
 import inquirer from 'inquirer';
+import { cliFeedback as feedBack } from '@utils/cliFeedback';
 import { storeKey, getKey } from '@services/storage.js';
 import { loadEncryptionKey } from '@services/auth';
 import { cliLogger } from '@utils/cliLogger';
@@ -29,10 +30,10 @@ async function promptForPrivateKey(): Promise<string | null> {
         const remainingAttempts = MAX_ATTEMPTS - attempt;
         
         if (remainingAttempts > 0) {
-            cliLogger.warn(`Private key must be at least ${MIN_KEY_LENGTH} characters long. ${remainingAttempts} attempts left.`);
+            feedBack.warn(`Private key must be at least ${MIN_KEY_LENGTH} characters long. ${remainingAttempts} attempts left.`);
         }
     }
-    cliLogger.error('Max attempts reached. Private key not stored.');
+    feedBack.error('Max attempts reached. Private key not stored.');
     return null;
 }
 
@@ -52,22 +53,23 @@ export async function addKey() {
         const secretKey = await loadEncryptionKey(password)
         const existingKey = await getKey(secretKey.toString(), alias);
         if (existingKey) {
-            cliLogger.warn(`Key '${alias}' already exists.`);
+            feedBack.warn(`Key '${alias}' already exists.`);
             
             const { overwrite } = await inquirer.prompt([
                 { type: 'confirm', name: 'overwrite', message: 'Do you want to overwrite the existing key?', default: false },
             ]);
 
             if (!overwrite) {
-                cliLogger.info('Operation cancelled. No key was stored.');
+                feedBack.info('Operation cancelled. No key was stored.');
                 return;
             }
         }
         const privateKey = await promptForPrivateKey();
         if (!privateKey) return;
         await storeKey(secretKey.toString(), alias, privateKey);
-        cliLogger.success(`Key '${alias}' stored securely.`);
+        feedBack.success(`Key '${alias}' stored securely.`);
     } catch (error) {
         cliLogger.error('Error adding key', (error as Error));
+        throw error
     }
 }

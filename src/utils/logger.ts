@@ -4,33 +4,37 @@ import { getLogDir } from './fileUtils';
 
 
 const LOG_DIR = getLogDir();
-
-
+const ENV = process.env.NODE_ENV || 'development';
+const LOG_LEVEL = process.env.LOG_LEVEL || (ENV === 'production' ? 'info' : 'debug');
 const logFormat = winston.format.combine(
     winston.format.timestamp(),
-    winston.format.printf(({ timestamp, level, message, ...meta }) => {
-        const metaString = Object.keys(meta).length ? ` | Meta: ${JSON.stringify(meta)}` : '';
-        return `[${timestamp}] ${level.toUpperCase()}: ${message}${metaString}`;
-    })
+    ENV === 'production'
+        ? winston.format.json() // JSON format for production
+        : winston.format.printf(({ timestamp, level, message, ...meta }) => {
+              const metaString = Object.keys(meta).length ? ` | Meta: ${JSON.stringify(meta)}` : '';
+              return `[${timestamp}] ${level.toUpperCase()}: ${message}${metaString}`;
+          })
 );
 
 
-const fileTransport = new DailyRotateFile({
-    dirname: LOG_DIR,
-    filename: 'app-%DATE%.log',
-    datePattern: 'YYYY-MM-DD',
-    maxSize: '10m', // Limit individual file size to 10MB
-    maxFiles: '30d', // Keep logs for 30 days
-});
+const transports = [
+    new winston.transports.Console({
+        format: ENV === 'production' ? winston.format.simple() : winston.format.colorize(),
+    }),
+    new DailyRotateFile({
+        dirname: LOG_DIR,
+        filename: 'app-%DATE%.log',
+        datePattern: 'YYYY-MM-DD',
+        maxSize: '10m',
+        maxFiles: '30d',
+    }),
+];
 
 
 const logger = winston.createLogger({
-    level: process.env.LOG_LEVEL || 'info', // Default logging level, configurable via environment variable
+    level: LOG_LEVEL,
     format: logFormat,
-    transports: [
-        new winston.transports.Console(), // Log to console
-        fileTransport, // Log to rotating files
-    ],
+    transports,
 });
 
 // Function to log important actions

@@ -2,12 +2,13 @@ import { getKey } from "@services/storage";
 import inquirer from 'inquirer';
 import { getVerifiedPassword } from "./utils";
 import { cliLogger } from '@utils/cliLogger';
+import { cliFeedback as feedBack } from '@utils/cliFeedback';
 
 export async function getKeyCommand() {
     try {
         const secretKey = await getVerifiedPassword();
         if (!secretKey) {
-            cliLogger.warn('Password verification failed. Aborting operation.');
+            feedBack.warn('Password verification failed. Aborting operation.');
             return;
         }
 
@@ -17,11 +18,12 @@ export async function getKeyCommand() {
 
         const key = await getKey(secretKey.toString(), alias);
         if (key) {
-            cliLogger.success(`Key '${alias}': ${key}`);
+            feedBack.success(`Key '${alias}': ${key}`);
         } else {
-            cliLogger.warn(`Key '${alias}' not found.`);
+            feedBack.warn(`Key '${alias}' not found.`);
         }
     } catch (error) {
         cliLogger.error('Error retrieving key', (error as Error));
+        throw error
     }
 }

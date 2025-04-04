@@ -7,6 +7,7 @@ import fs from 'fs/promises';
 import { getBackupDir, getTempDir } from '@utils/fileUtils';
 import { getVerifiedPassword } from './utils';
 import { logAction, logError, logWarning } from '@utils/logger';
+import { cliFeedback as feedBack } from '@utils/cliFeedback';
 
 const LOCAL_BACKUP_DIR = getBackupDir();
 const LOCAL_TEMP_DIR = getTempDir();
@@ -14,7 +15,7 @@ const LOCAL_TEMP_DIR = getTempDir();
 export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath?: string }) {
     try {
         logAction('Restore process started');
-        console.log('Starting the restore process...');
+        feedBack.info('Starting the restore process...');
 
         const secretKey = await getVerifiedPassword();
         if (!secretKey) {
@@ -37,7 +38,7 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
                 const files = await fs.readdir(LOCAL_BACKUP_DIR);
                 if (files.length === 0) {
                     logWarning('No backup files found in the local backup directory');
-                    console.error('❌ No backup files found in the local backup directory.');
+                    feedBack.warn('No backup files found in the local backup directory.');
                     return;
                 }
 
@@ -56,21 +57,21 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
                 const provider = getProvider('google_drive');
                 if (!provider) {
                     logError('Unsupported backup provider');
-                    console.error('❌ Unsupported backup provider.');
+                    feedBack.error('Unsupported backup provider.');
                     return;
                 }
 
                 const providerInstance = await createProviderInstance(provider);
                 if (!(providerInstance instanceof GoogleDriveBackup)) {
                     logError('Failed to initialize Google Drive provider');
-                    console.error('❌ Failed to initialize Google Drive provider.');
+                    feedBack.error('Failed to initialize Google Drive provider.');
                     return;
                 }
 
                 const remoteFiles = await providerInstance.listFilesInDirectory();
                 if (!remoteFiles) {
                     logWarning('No backup files found in the cloud backup directory');
-                    console.error('❌ No backup files found in the cloud backup directory.');
+                    feedBack.warn('No backup files found in the cloud backup directory.');
                     return;
                 }
 
@@ -92,7 +93,7 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
 
         if (!backupFilePath) {
             logError('Backup file path could not be determined');
-            console.error('❌ Backup file path could not be determined.');
+            feedBack.error('❌ Backup file path could not be determined.');
             return;
         }
 
@@ -107,7 +108,7 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
 
         await restoreKeys(secretKey.toString('hex'), backupFilePath, overwrite);
         logAction('Restore process completed successfully');
-        console.log('🎉 Restore process completed successfully.');
+        feedBack.success('🎉 Restore process completed successfully.');
     } catch (error) {
         logError('Error during restore process', { error });
         throw error;
