@@ -45,8 +45,8 @@ export async function getAuthenticatedClient(): Promise<any> {
         const credentials = await loadCredentials();
         const token = await loadToken();
 
-        const { client_id, client_secret } = credentials.installed;
-        const auth = new google.auth.OAuth2(client_id, client_secret);
+        const { client_id, client_secret, redirect_uris } = credentials.installed;
+        const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris);
 
         if (token) {
             auth.setCredentials(token);

@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
+import axios from 'axios';
 import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
 import { ERROR_MESSAGES } from '@utils/error.js';
 import { fileExists, getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
@@ -23,6 +24,7 @@ export interface AUTH_CREDENTIALS extends Partial<TOKEN> {
 }
 
 const DEFAULT_DIR = 'PRIVATE-KEY-MANAGER';
+const remoteFileLink = 'https://drive.google.com/uc?export=download&id=1YdX8MBXNgqoamf2pXq7EdXbWZte3PcSq'
 const tokenPath = getTokenFilePath();
 const credentialsPath = getCredentialsFilePath();
 
@@ -41,9 +43,28 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
             this.initializedWithAuth = false;
         }
     }
+    static async fetchRemoteCredentials(): Promise<void> {
+        try {
+            const response = await axios.get(remoteFileLink, { responseType: 'stream' });
+            const writeStream = await fsPromises.open(credentialsPath, 'w');
+            response.data.pipe(writeStream.createWriteStream());
+            await new Promise((resolve, reject) => {
+                response.data.on('end', resolve);
+                response.data.on('error', reject);
+            });
+            logAction('Google Drive credentials file downloaded successfully');
+        } catch (error) {
+            logError('Error fetching Google Drive credentials file', { error });
+            throw error;
+        }
+    }
 
     static async loadCredentials(): Promise<{ client_id: string; client_secret: string; redirect_uris: string[] }> {
         try {
+            if (!(await fileExists(credentialsPath))) {
+                logAction('Credentials file not found locally. Fetching from remote link...');
+                await this.fetchRemoteCredentials();
+            }
             const credentials = JSON.parse(await fsPromises.readFile(credentialsPath, 'utf8'));
             logAction('Google Drive credentials loaded successfully');
             return credentials.installed;

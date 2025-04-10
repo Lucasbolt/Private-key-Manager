@@ -3,6 +3,7 @@ import { cliFeedback as feedBack } from '@utils/cliFeedback';
 import { storeKey, getKey } from '@services/storage.js';
 import { loadEncryptionKey } from '@services/auth';
 import { cliLogger } from '@utils/cliLogger';
+import { getVerifiedPassword } from './utils';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;
@@ -46,11 +47,15 @@ export async function addKey() {
             { type: 'input', name: 'alias', message: 'Enter key alias:' },
         ]);
 
-        const { password } = await inquirer.prompt([
-            { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
-        ]);
+        // const { password } = await inquirer.prompt([
+        //     { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
+        // ]);
 
-        const secretKey = await loadEncryptionKey(password)
+        const secretKey = await getVerifiedPassword()
+        if (!secretKey) {
+            feedBack.warn('Password verification failed. Aborting backup process.')
+            return
+        }
         const existingKey = await getKey(secretKey.toString(), alias);
         if (existingKey) {
             feedBack.warn(`Key '${alias}' already exists.`);
