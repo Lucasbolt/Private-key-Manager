@@ -1,9 +1,9 @@
-import { getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils';
+import { getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import fs from 'fs/promises';
 import { google } from 'googleapis';
 import open from 'open';
 import readline from 'readline';
-import { logAction, logError } from '@utils/logger';
+import { logAction, logError } from '@utils/logger.js';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
 

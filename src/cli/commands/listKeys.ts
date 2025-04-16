@@ -1,7 +1,7 @@
-import { listKeys } from '@services/storage';
-import { getVerifiedPassword } from './utils';
-import { cliLogger } from '@utils/cliLogger';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
+import { listKeys } from '@services/storage.js';
+import { getVerifiedPassword } from './utils.js';
+import { cliLogger } from '@utils/cliLogger.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 
 export async function listStoredKeys() {
     try {

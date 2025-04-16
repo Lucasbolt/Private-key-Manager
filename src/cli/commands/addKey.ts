@@ -1,9 +1,9 @@
 import inquirer from 'inquirer';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 import { storeKey, getKey } from '@services/storage.js';
-import { loadEncryptionKey } from '@services/auth';
-import { cliLogger } from '@utils/cliLogger';
-import { getVerifiedPassword } from './utils';
+// import { loadEncryptionKey } from '@services/auth.js';
+import { cliLogger } from '@utils/cliLogger.js';
+import { getVerifiedPassword } from './utils.js';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;

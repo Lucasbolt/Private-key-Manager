@@ -1,13 +1,13 @@
 import inquirer from 'inquirer';
-import { restoreKeys } from '@services/backup/backup';
-import { getProvider, createProviderInstance } from '@services/backup/cloud/remoteBackup';
-import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive';
+import { restoreKeys } from '@services/backup/backup.js';
+import { getProvider, createProviderInstance } from '@services/backup/cloud/remoteBackup.js';
+import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
 import path from 'path';
 import fs from 'fs/promises';
-import { getBackupDir, getTempDir } from '@utils/fileUtils';
-import { getVerifiedPassword } from './utils';
-import { logAction, logError, logWarning } from '@utils/logger';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
+import { getBackupDir, getTempDir } from '@utils/fileUtils.js';
+import { getVerifiedPassword } from './utils.js';
+import { logAction, logError, logWarning } from '@utils/logger.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 
 const LOCAL_BACKUP_DIR = getBackupDir();
 const LOCAL_TEMP_DIR = getTempDir();

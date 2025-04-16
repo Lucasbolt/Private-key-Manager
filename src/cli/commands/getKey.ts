@@ -1,8 +1,8 @@
-import { getKey } from "@services/storage";
 import inquirer from 'inquirer';
-import { getVerifiedPassword } from "./utils";
-import { cliLogger } from '@utils/cliLogger';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
+import { getKey, listKeys } from "@services/storage.js";
+import { getVerifiedPassword } from "./utils.js";
+import { cliLogger } from '@utils/cliLogger.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 
 export async function getKeyCommand() {
     try {
@@ -12,8 +12,19 @@ export async function getKeyCommand() {
             return;
         }
 
+        const keys = await listKeys()
+        if (keys.length < 1) {
+            feedBack.warn('No stored keys.')
+            return
+        }
+
         const { alias } = await inquirer.prompt([
-            { type: 'input', name: 'alias', message: 'Enter key alias to retrieve:' },
+            { 
+                type: 'list',
+                name: 'alias',
+                message: 'Select key to retrieve',
+                choices: keys
+            },
         ]);
 
         const key = await getKey(secretKey.toString(), alias);

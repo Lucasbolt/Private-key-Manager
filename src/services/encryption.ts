@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { logAction, logError } from '@utils/logger';
+import { logAction, logError } from '@utils/logger.js';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; 

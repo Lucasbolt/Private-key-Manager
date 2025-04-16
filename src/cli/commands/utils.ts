@@ -1,7 +1,7 @@
 import inquirer from 'inquirer';
-import { loadEncryptionKey } from '@services/auth';
-import { logAction, logError, logWarning } from '@utils/logger';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
+import { loadEncryptionKey } from '@services/auth.js';
+import { logAction, logError, logWarning } from '@utils/logger.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 
 export async function getPassword(): Promise<string> {
     try {

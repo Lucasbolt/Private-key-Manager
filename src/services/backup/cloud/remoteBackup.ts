@@ -1,7 +1,7 @@
-import { AUTH_CREDENTIALS, createGoogleDriveBackupInstance, GoogleDriveBackup } from "./google/googlDrive";
+import { AUTH_CREDENTIALS, createGoogleDriveBackupInstance, GoogleDriveBackup } from "./google/googlDrive.js";
 // import { S3Backup } from "./amazonS3/s3";
-import { ACCESS_TYPE } from "./lib";
-import { logAction, logError, logWarning } from '@utils/logger';
+import { ACCESS_TYPE } from "./lib.js";
+import { logAction, logError, logWarning } from '@utils/logger.js';
 
 export interface BackupProvider {
     new(...args: any[]): any,

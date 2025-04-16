@@ -1,19 +1,30 @@
-import { deleteKey } from '@services/storage';
 import inquirer from 'inquirer';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
-import { getVerifiedPassword } from './utils';
-import { cliLogger } from '@utils/cliLogger';
+import { deleteKey, getKey, listKeys } from '@services/storage.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
+import { getVerifiedPassword } from './utils.js';
+import { cliLogger } from '@utils/cliLogger.js';
 
 export async function removeKey() {
     try {
-        const verifiedPassword = await getVerifiedPassword();
-        if (!verifiedPassword) {
+        const secretKey = await getVerifiedPassword();
+        if (!secretKey) {
             feedBack.warn('Password verification failed. Aborting operation.');
             return;
         }
 
+        const keys = await listKeys()
+        if (keys.length < 1) {
+            feedBack.warn('No stored keys.')
+            return
+        };
+
         const { alias } = await inquirer.prompt([
-            { type: 'input', name: 'alias', message: 'Enter key alias to delete:' },
+            {
+                type: 'list',
+                name: 'alias',
+                message: 'Select key to delete',
+                choices: keys
+            },
         ]);
 
         const { confirm } = await inquirer.prompt([

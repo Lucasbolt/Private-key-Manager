@@ -1,7 +1,7 @@
 import { Level } from 'level';
-import { encryptKey, decryptKey } from './encryption';
-import { getDatabaseDir } from '@utils/fileUtils';
-import { logAction, logError, logWarning } from '@utils/logger';
+import { encryptKey, decryptKey } from './encryption.js';
+import { getDatabaseDir } from '@utils/fileUtils.js';
+import { logAction, logError, logWarning } from '@utils/logger.js';
 
 let db: Level<string, string>;
 
@@ -64,3 +64,4 @@ export async function deleteKey(alias: string): Promise<void> {
         throw error;
     }
 }
+

@@ -1,11 +1,11 @@
 import crypto from 'crypto';
 import bcrypt from 'bcrypt';
 import fs from 'fs/promises';
-import { fileExists, getAuthFilePath } from '@utils/fileUtils';
-import { ERROR_MESSAGES } from '@utils/error';
-import { logAction, logError } from '@utils/logger';
+import { fileExists, getAuthFilePath } from '@utils/fileUtils.js';
+import { ERROR_MESSAGES } from '@utils/error.js';
+import { logAction, logError } from '@utils/logger.js';
+import { ensureStorageDirectory } from '../utils/storagePaths.js';
 
-// const ALGORITHM = 'aes-256-gcm';
 const SALT_LENGTH = 16;
 const KEY_LENGTH = 32;
 const ITERATIONS = 100000;
@@ -74,5 +74,19 @@ export async function loadEncryptionKey(password: string): Promise<Buffer> {
     } catch (error) {
         logError('Error loading encryption key', { error });
         throw error;
+    }
+}
+
+
+export async function verifyAuthorizationDataExists (): Promise<boolean> {
+    try {
+        await ensureStorageDirectory()
+        if (!(await fileExists(getAuthFilePath()))) {
+            return false
+        }
+        return true
+    } catch (error) {
+        logError("Error verifying authorization exists", { error })
+        throw error
     }
 }

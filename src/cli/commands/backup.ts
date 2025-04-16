@@ -1,11 +1,11 @@
 import inquirer from 'inquirer';
-import { BackupProvider, createProviderInstance, getProvider, PROVIDERS } from '@services/backup/cloud/remoteBackup';
-import { cliFeedback as feedBack } from '@utils/cliFeedback';
-import { getVerifiedPassword } from './utils';
-import { backupKeys } from '@services/backup/backup';
-import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive';
+import { BackupProvider, createProviderInstance, getProvider, PROVIDERS } from '@services/backup/cloud/remoteBackup.js';
+import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
+import { getVerifiedPassword } from './utils.js';
+import { backupKeys } from '@services/backup/backup.js';
+import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
 import path from 'path';
-import { cliLogger } from '@utils/cliLogger';
+import { cliLogger } from '@utils/cliLogger.js';
 
 async function selectBackupProvider(): Promise<string> {
     const { answer } = await inquirer.prompt([

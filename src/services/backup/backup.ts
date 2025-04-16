@@ -1,10 +1,10 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
-import { getDbInstance, listKeys, getDbInstance as db } from '../storage';
-import { getBackupDir } from '@utils/fileUtils';
-import { logAction, logError, logWarning } from '@utils/logger';
-import { decryptBackup, encryptBackup } from '../encryption';
+import { getDbInstance, listKeys, getDbInstance as db } from '../storage.js';
+import { getBackupDir } from '@utils/fileUtils.js';
+import { logAction, logError, logWarning } from '@utils/logger.js';
+import { decryptBackup, encryptBackup } from '../encryption.js';
 
 export async function backupKeys(secret_key: string, filePath?: string): Promise<string> {
     try {

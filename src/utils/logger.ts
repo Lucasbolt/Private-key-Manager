@@ -1,9 +1,15 @@
 import winston from 'winston';
 import DailyRotateFile from 'winston-daily-rotate-file';
-import { getLogDir } from './fileUtils';
+import { getLogDir } from './fileUtils.js';
 
 
 const LOG_DIR = getLogDir();
+
+export const currentLogFile = () => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    return `${LOG_DIR}/app-${currentDate}.log`
+}
+
 const ENV = process.env.NODE_ENV || 'development';
 const LOG_LEVEL = process.env.LOG_LEVEL || (ENV === 'production' ? 'info' : 'debug');
 const logFormat = winston.format.combine(
@@ -18,9 +24,11 @@ const logFormat = winston.format.combine(
 
 
 const transports = [
-    new winston.transports.Console({
-        format: ENV === 'production' ? winston.format.simple() : winston.format.colorize(),
-    }),
+    ...(ENV !== 'production' ? [
+        new winston.transports.Console({
+            format: winston.format.colorize(),
+        }),
+    ] : []),
     new DailyRotateFile({
         dirname: LOG_DIR,
         filename: 'app-%DATE%.log',
@@ -60,11 +68,13 @@ export function logDebug(message: string, context?: object) {
 // Handle uncaught exceptions and unhandled promise rejections
 process.on('uncaughtException', (error) => {
     logger.error(`[UNCAUGHT EXCEPTION] ${error.stack || error}`);
+    console.error(`Error occured! Check the log file for more detail: ${currentLogFile()}`)
     process.exit(1); 
 });
 
 process.on('unhandledRejection', (reason) => {
     logger.error(`[UNHANDLED REJECTION] ${reason}`);
+    console.error(`Error occured! Check the log file for more detail: ${currentLogFile()}`)
 });
 
 export default logger;

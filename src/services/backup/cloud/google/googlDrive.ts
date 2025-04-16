@@ -8,7 +8,7 @@ import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
 import { ERROR_MESSAGES } from '@utils/error.js';
 import { fileExists, getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import { getAuthenticatedClient } from './auth.js';
-import { logAction, logError, logWarning } from '@utils/logger';
+import { logAction, logError, logWarning } from '@utils/logger.js';
 
 export interface TOKEN {
     access_token: string,
