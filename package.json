@@ -1,6 +1,6 @@
 {
   "name": "private-key-manager",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "Chisom Ibekwe <lucasbolt700@gmail.com>",
   "license": "ISC",
   "description": "A CLI tool and desktop app for managing private keys securely",
