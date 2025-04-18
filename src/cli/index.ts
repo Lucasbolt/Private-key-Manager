@@ -19,7 +19,7 @@ import { restoreBackup } from './commands/restoreBackup.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { currentLogFile } from '../utils/logger.js';
 
-console.log(getAuthFilePath())
+// console.log(getAuthFilePath())
 const title = "Private Key Manager";
 const Banner = async () => {
     try {
@@ -39,8 +39,6 @@ const Banner = async () => {
         cliLogger.error('Error displaying banner', (error as Error));
     }
 };
-
-Banner().catch((error) => cliLogger.error('Error initializing banner', error));
 
 const program = new Command();
 
@@ -89,10 +87,15 @@ async function initializeAuthorizationData() {
 
 // Hook to run initialization before any command
 program.hook('preAction', async () => {
+    if (program.opts().verbose) {
+        process.env.LOG_LEVEL = 'debug'
+    }
+    Banner().catch((error) => cliLogger.error('Error initializing banner', error));
     await initializeAuthorizationData();
 });
 
 program
+    .option('-v, --verbose', 'Enable verbose logging to the console')
     .version('1.0.0')
     .description('Private Key Manager CLI');
 

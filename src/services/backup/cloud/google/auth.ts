@@ -40,7 +40,19 @@ async function saveToken(token: any): Promise<void> {
     }
 }
 
-export async function getAuthenticatedClient(): Promise<any> {
+/**
+ * Authenticates and returns a Google OAuth2 client.
+ *
+ * This function handles the process of authenticating with Google APIs. It uses stored credentials
+ * and tokens to authenticate the client. If the `reload` parameter is set to `true` or no valid
+ * token is found, it generates a new authentication URL, prompts the user to authorize the app,
+ * and retrieves a new token.
+ *
+ * @param {boolean} [reload=false] - Whether to force re-authentication and generate a new token.
+ * @returns {Promise<any>} A promise that resolves to an authenticated Google OAuth2 client.
+ * @throws Will throw an error if authentication fails or if there is an issue with credentials or tokens.
+ */
+export async function getAuthenticatedClient(reload: boolean = false): Promise<any> {
     try {
         const credentials = await loadCredentials();
         const token = await loadToken();
@@ -48,7 +60,7 @@ export async function getAuthenticatedClient(): Promise<any> {
         const { client_id, client_secret, redirect_uris } = credentials.installed;
         const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris);
 
-        if (token) {
+        if (!reload && token) {
             auth.setCredentials(token);
         } else {
             const authUrl = auth.generateAuthUrl({

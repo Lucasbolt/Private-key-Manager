@@ -26,6 +26,7 @@
     "build": "tsc && tsc-alias",
     "prepublishOnly": "npm run build",
     "dev": "tsx",
+    "package-cli": "npm run build && npm unlink -g && npm link",
     "watch": "tsx watch src/index.ts",
     "test": "jest --coverage",
     "test:watch": "jest --watch"

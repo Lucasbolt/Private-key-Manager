@@ -98,6 +98,11 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
 
             logAction('Backup uploaded to Google Drive', { remotePath });
         } catch (error) {
+            if ((error as any).status === 401 || (error as any).status === 400) {
+                logWarning('OAuth token is expired or invalid during upload. Reauthenticating...');
+                await this.reauthenticate();
+                return await this.uploadBackup(filePath, remotePath); // Retry after reauthentication
+            }
             logError('Error uploading backup to Google Drive', { filePath, remotePath, error });
             throw error;
         }
@@ -128,6 +133,11 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
 
             logAction('Backup downloaded from Google Drive', { localPath });
         } catch (error) {
+            if ((error as any).status === 401 || (error as any).status === 400) {
+                logWarning('OAuth token is expired or invalid during upload. Reauthenticating...');
+                await this.reauthenticate();
+                return await this.downloadBackup(localPath, remotePath); // Retry after reauthentication
+            }
             logError('Error downloading backup from Google Drive', { remotePath, localPath, error });
             throw error;
         }
@@ -148,9 +158,27 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
             this.initializedWithAuth = true;
             logAction('Google Drive auth token loaded successfully');
         } catch (error) {
+            if ((error as any).status === 401 || (error as any).status === 400 ) {
+                logWarning('OAUTH token is expired or invalid. Reauthenticating...');
+                return await this.reauthenticate()
+            }
             logError('Error loading Google Drive auth token', { error });
             throw error;
         }
+    }
+
+    async reauthenticate() {
+     try {
+        const auth = await getAuthenticatedClient(true);
+        this.initAuth(auth);
+        
+        const newToken = this.auth.credentials;
+        await fsPromises.writeFile(tokenPath, JSON.stringify(newToken));
+        logAction('Reauthentication successful. New token saved.')
+     } catch (error) {
+        logError('Error during reauthentication', [ error ]);
+        throw error;
+     }   
     }
 
     initAuth(auth: OAuth2Client) {
@@ -159,7 +187,7 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
         logAction('Google Drive auth initialized successfully');
     }
 
-    async createDirectory(directoryName: string, parentId: string | null = null) {
+    async createDirectory(directoryName: string, parentId: string | null = null): Promise<string | null | undefined> {
         try {
             let folderId;
 
@@ -187,12 +215,17 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
             }
             return folderId;
         } catch (error) {
+            if ((error as any).status === 401 || (error as any).status === 400) {
+                logWarning('OAUTH token is expired or invalid. Reauthenticating...');
+                await this.reauthenticate()
+                return await this.createDirectory(directoryName, parentId)
+            }
             logError('Error creating Google Drive directory', { directoryName, parentId, error });
             throw error;
         }
     }
 
-    async listFilesInDirectory(directoryName: string = DEFAULT_DIR, parentId: string | null = null) {
+    async listFilesInDirectory(directoryName: string = DEFAULT_DIR, parentId: string | null = null): Promise<Array<Record<string, any>> | null> {
         try {
             const drive = google.drive({ version: 'v3', auth: this.auth });
             const folderQuery = await drive.files.list({
@@ -223,6 +256,11 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
             logAction('Files listed in Google Drive directory', { directoryName, fileCount: files.length });
             return files; // Array of { id, name }
         } catch (error) {
+            if ((error as any).status === 401 || (error as any).status === 400) {
+                logWarning('OAUTH token is expired or invalid. Reauthenticating...');
+                await this.reauthenticate()
+                return await this.listFilesInDirectory(directoryName)
+            }
             logError('Error listing files in Google Drive directory', { directoryName, parentId, error });
             throw error;
         }
