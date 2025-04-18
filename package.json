@@ -13,7 +13,7 @@
   ],
   "main": "./buld/src/cli/index.js",
   "bin": {
-    "pkm-cli": "./build/src/cli/index.js"
+    "pkm-cli": "build/src/cli/index.js"
   },
   "files": [
     "build/**/*",

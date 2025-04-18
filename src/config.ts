@@ -14,6 +14,7 @@ export default {
     DB_DIR: path.join(dataDir, 'database'),
     BACKUP_DIR: path.join(dataDir, 'backup-files'),
     CREDENTIALS_FILE: path.join(configDir, 'credentials.json'),
-    TEMP_DIR: tempDir
-
+    TEMP_DIR: tempDir,
+    LOG_LEVEL: 'debug',
+    VERBOSE: 'false'
 }
