@@ -13,7 +13,7 @@
   ],
   "main": "./buld/src/cli/index.js",
   "bin": {
-    "private-key-manager": "./build/src/cli/index.js"
+    "pkm-cli": "./build/src/cli/index.js"
   },
   "files": [
     "build/**/*",

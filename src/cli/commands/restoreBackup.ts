@@ -4,7 +4,7 @@ import { getProvider, createProviderInstance } from '@services/backup/cloud/remo
 import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
 import path from 'path';
 import fs from 'fs/promises';
-import { getBackupDir, getTempDir } from '@utils/fileUtils.js';
+import { fileExists, getBackupDir, getTempDir } from '@utils/fileUtils.js';
 import { getVerifiedPassword } from './utils.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
@@ -12,7 +12,11 @@ import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 const LOCAL_BACKUP_DIR = getBackupDir();
 const LOCAL_TEMP_DIR = getTempDir();
 
-export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath?: string }) {
+interface Options {
+    file: string | undefined
+}
+
+export async function restoreBackup(option: Options = { file: undefined }) {
     try {
         logAction('Restore process started');
         feedBack.info('Starting the restore process...');
@@ -23,8 +27,8 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
             return;
         }
 
-        let backupFilePath: string | undefined = optionalBackupPath;
-        if (!optionalBackupPath) {
+        let backupFilePath = option.file;
+        if (!option.file) {
             const { backupLocation } = await inquirer.prompt([
                 {
                     type: 'list',
@@ -93,7 +97,13 @@ export async function restoreBackup({ optionalBackupPath }: { optionalBackupPath
 
         if (!backupFilePath) {
             logError('Backup file path could not be determined');
-            feedBack.error('❌ Backup file path could not be determined.');
+            feedBack.error('Backup file path could not be determined.');
+            return;
+        }
+
+        if (!(await fileExists(backupFilePath))) {
+            logError('Backup file does not exist.');
+            feedBack.warn('Backup file path is invalid. Please check for possible file path error and try again.');
             return;
         }
 

@@ -32,7 +32,7 @@ const Banner = async () => {
         // console.log(chalk.green.bold('=========================================='));
         // console.log(chalk.blueBright(bannerText)); // Display the banner in blue
         console.log(chalk.green.bold('=========================================='));
-        console.log(chalk.yellowBright('🔑 Welcome to the Private Key Manager CLI 🔑'));
+        console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
         console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
         console.log(chalk.green.bold('==========================================\n'));
     } catch (error) {
@@ -95,9 +95,9 @@ program.hook('preAction', async () => {
 });
 
 program
-    .option('-v, --verbose', 'Enable verbose logging to the console')
+    .option('-v, --verbose', 'Enable verbose logging for detailed output')
     .version('1.0.0')
-    .description('Private Key Manager CLI');
+    .description('A secure and efficient command-line tool for managing private keys.');
 
 program
     .command('add')
@@ -106,6 +106,7 @@ program
 
 program
     .command('get')
+    .option('-a, --alias <name>', 'key alias to fetch')
     .description('Get a stored key')
     .action(getKeyCommand);
 
@@ -116,6 +117,7 @@ program
 
 program
     .command('delete')
+    .option('-a, --alias <name>', 'key alias to delete')
     .description('Delete a stored key')
     .action(removeKey);
 
@@ -126,6 +128,7 @@ program
 
 program
     .command('restore')
+    .option('-f, --file <file_path>', 'file(path) containing(pointing to) backup file.')
     .description('Restore private keys data from backup files')
     .action(restoreBackup);
 
