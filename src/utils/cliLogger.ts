@@ -2,7 +2,7 @@ import chalk from 'chalk';
 import logger from './logger.js';
 
 const ENV = process.env.NODE_ENV || 'development';
-const verbose = () => (ENV !== 'production' || process.env.LOG_LEVEL === 'debug') ? true : false;
+const verbose = () => (ENV !== 'production' || process.env.LOG_VERBOSE === 'true') ? true : false;
 
 class CliLogger {
     success(message: string, details?: object) {

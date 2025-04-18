@@ -88,7 +88,7 @@ async function initializeAuthorizationData() {
 // Hook to run initialization before any command
 program.hook('preAction', async () => {
     if (program.opts().verbose) {
-        process.env.LOG_LEVEL = 'debug'
+        process.env.LOG_VERBOSE = 'true'
     }
     Banner().catch((error) => cliLogger.error('Error initializing banner', error));
     await initializeAuthorizationData();
