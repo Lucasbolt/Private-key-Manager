@@ -39,11 +39,9 @@
     "commander": "^13.1.0",
     "dotenv": "^16.4.7",
     "env-paths": "^3.0.0",
-    "figlet": "^1.8.0",
     "googleapis": "^146.0.0",
     "inquirer": "^12.4.3",
     "level": "^9.0.0",
-    "module-alias": "^2.2.3",
     "open": "^10.1.0",
     "winston": "^3.17.0",
     "winston-daily-rotate-file": "^5.0.0"
@@ -65,14 +63,6 @@
   },
   "engines": {
     "node": ">=18"
-  },
-  "_moduleAliases": {
-    "@root": ".",
-    "@src": "src",
-    "@tests": "test",
-    "@services": "src/services",
-    "@utils": "src/utils",
-    "@commands": "src/commands"
   },
   "repository": {
     "type": "git",

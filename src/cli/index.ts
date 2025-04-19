@@ -1,37 +1,20 @@
 #!/usr/bin/env node
-process.env.NODE_ENV = 'production';
-process.env.LOG_LEVEL = 'debug'
-
-
 import 'dotenv/config';
 import chalk from 'chalk';
-import figlet from 'figlet';
 import { Command } from 'commander';
 import { addKey } from './commands/addKey.js';
 import { listStoredKeys } from './commands/listKeys.js';
 import { removeKey } from './commands/deleteKey.js';
 import { getKeyCommand } from './commands/getKey.js';
 import { testBackup } from './commands/backup.js';
-import { fileExists, getAuthFilePath } from '@utils/fileUtils.js';
 import inquirer from 'inquirer';
 import { setupMasterPassword, verifyAuthorizationDataExists } from '@services/auth.js';
 import { restoreBackup } from './commands/restoreBackup.js';
-// import { ensureStorageDirectory } from '@utils/storagePaths.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { currentLogFile } from '../utils/logger.js';
 
-// console.log(getAuthFilePath())
-const title = "Private Key Manager";
 const Banner = async () => {
     try {
-        const bannerText = figlet.textSync(title, {
-            font: 'Standard',
-            horizontalLayout: 'default',
-            verticalLayout: 'default',
-        });
-
-        // console.log(chalk.green.bold('=========================================='));
-        // console.log(chalk.blueBright(bannerText)); // Display the banner in blue
         console.log(chalk.green.bold('=========================================='));
         console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
         console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
