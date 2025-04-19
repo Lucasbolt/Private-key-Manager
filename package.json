@@ -22,7 +22,7 @@
   ],
   "type": "module",
   "scripts": {
-    "start": "NODE_ENV=production TS_NODE_BASEURL=./build node -r tsconfig-paths/register build/src/cli/index.js",
+    "start": "NODE_ENV=production build/src/cli/index.js",
     "build": "tsc && tsc-alias",
     "prepublishOnly": "npm run build",
     "dev": "tsx",

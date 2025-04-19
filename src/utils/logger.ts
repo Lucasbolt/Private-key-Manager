@@ -22,13 +22,12 @@ const logFormat = winston.format.combine(
           })
 );
 
-
 const transports = [
-    ...(ENV !== 'production' ? [
-        new winston.transports.Console({
-            format: winston.format.colorize(),
-        }),
-    ] : []),
+    // ...(ENV !== 'production' ? [
+    //     new winston.transports.Console({
+    //         format: winston.format.colorize(),
+    //     }),
+    // ] : []),
     new DailyRotateFile({
         dirname: LOG_DIR,
         filename: 'app-%DATE%.log',
