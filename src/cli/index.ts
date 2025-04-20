@@ -31,7 +31,7 @@ async function initializeAuthorizationData() {
         // await ensureStorageDirectory();
         cliLogger.info('Initializing authorization data...');
 
-        if (!verifyAuthorizationDataExists()) {
+        if (!(await verifyAuthorizationDataExists())) {
             cliLogger.warn('Authorization data file not found. Starting initialization process.');
 
             const { password } = await inquirer.prompt([
