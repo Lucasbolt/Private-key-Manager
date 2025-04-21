@@ -8,8 +8,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Implemented a retry strategy for `fetchRemoteCredentials` in `GoogleDriveBackup` to handle network errors with clean error messages.
-- Extended the `BackupProvider` interface to include `uploadBackup` and `downloadBackup` methods.
 - Dynamically fetch the latest version for the CLI `version` command using the `getLatestVersion` utility function.
 - Created a utility function `getLatestVersion` in `version.ts` to read the version from `package.json`.
 
@@ -18,3 +16,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 - Updated the CLI `version` command to dynamically fetch the latest version.
+- Made cloud backup optional in the application.
