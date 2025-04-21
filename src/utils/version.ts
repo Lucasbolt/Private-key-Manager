@@ -10,7 +10,7 @@ export async function getLatestVersion(): Promise<string> {
     try {
         const fileName = fileURLToPath(import.meta.url);
         const __dirname = path.dirname(fileName)
-        const packageJsonPath = path.resolve(__dirname, '../../package.json');
+        const packageJsonPath = path.resolve(__dirname, '../package.json');
         const packageJsonContent = await readFile(packageJsonPath, 'utf-8');
         const packageJson = JSON.parse(packageJsonContent);
         return packageJson.version;
