@@ -6,37 +6,47 @@ import { backupKeys } from '@services/backup/backup.js';
 import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
 import path from 'path';
 import { cliLogger } from '@utils/cliLogger.js';
+import { RemoteBackupProvider } from '@root/src/services/backup/cloud/lib.js';
 
-async function selectBackupProvider(): Promise<string> {
+async function selectBackupProvider(): Promise<string | null> {
+    const providers = Object.keys(PROVIDERS).map((item) => item.toUpperCase().replace(/_/g, ' '))
+    providers.push('None (only local backup)')
+
     const { answer } = await inquirer.prompt([
         {
             type: 'list',
             name: 'answer',
             message: 'Choose a cloud storage option:',
-            choices: Object.keys(PROVIDERS).map((item) => item.toUpperCase().replace(/_/g, ' ')),
+            choices: providers,
             default: 'Google Drive',
         },
     ]);
+    if ((answer as string).includes('only local backup')) return null
     return answer;
 }
 
-async function performBackup(secretKey: string, providerName: string): Promise<void> {
+async function performBackup(secretKey: string, providerName: string | null): Promise<void> {
     try {
-        feedBack.loading('Retrieving the backup provider...');
-        const provider = getProvider(providerName.toLowerCase().replace(' ', '_'));
-        if (!provider) {
-            throw new Error(`Unsupported provider: ${providerName}`);
-        }
 
-        const providerInstance = await createProviderInstance(provider as BackupProvider);
-
-        feedBack.info('Backing up keys...');
+        feedBack.info('Starting the key backup process...');
         const backupLocation = await backupKeys(secretKey);
 
-        feedBack.info('Uploading backup to the cloud...');
-        await (providerInstance as GoogleDriveBackup).uploadBackup(backupLocation, path.basename(backupLocation));
+        if (!providerName) {
+            feedBack.success('Backup completed successfully. The backup is stored locally as no cloud provider was selected.');
+            return;
+        }
 
-        feedBack.success('Backup process completed successfully.');
+        feedBack.success('Local backup completed successfully.');
+        feedBack.loading('Connecting to cloud provider...');
+        const provider = getProvider(providerName.toLowerCase().replace(' ', '_'));
+        
+        if (!provider) {
+            throw new Error(`The selected cloud provider "${providerName}" is not supported.`);
+        }
+        const providerInstance = await createProviderInstance(provider as BackupProvider);
+        feedBack.info('Uploading the backup to the selected cloud provider...');
+        await (providerInstance as RemoteBackupProvider).uploadBackup(backupLocation, path.basename(backupLocation));
+        feedBack.success('Backup successfully uploaded to the cloud.');
     } catch (error) {
         feedBack.error('Error occured during backup process.')
         cliLogger.error('Error during backup process', (error as Error));
@@ -45,7 +55,6 @@ async function performBackup(secretKey: string, providerName: string): Promise<v
 }
 
 export async function testBackup(): Promise<void> {
-    feedBack.loading('Starting the backup process...');
     try {
         const secretKey = await getVerifiedPassword();
         if (!secretKey) {
@@ -54,8 +63,12 @@ export async function testBackup(): Promise<void> {
         }
 
         const selectedProvider = await selectBackupProvider();
-        feedBack.info(`You selected: ${selectedProvider}`);
 
+        if (!selectedProvider) {
+            feedBack.warn('No cloud storage provider selected. Backup will only be stored locally.')
+        } else {
+            feedBack.info(`You selected: ${selectedProvider}`);
+        }
         await performBackup(secretKey.toString('hex'), selectedProvider);
     } catch (error) {
         // feedBack.error('Error occured during the backup process')

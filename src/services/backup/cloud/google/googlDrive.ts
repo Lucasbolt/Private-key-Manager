@@ -4,11 +4,13 @@ import fs from 'fs';
 import fsPromises from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
+import { setTimeout } from 'timers/promises';
 import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
 import { ERROR_MESSAGES } from '@utils/error.js';
 import { fileExists, getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import { getAuthenticatedClient } from './auth.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
+
 
 export interface TOKEN {
     access_token: string,
@@ -28,6 +30,9 @@ const remoteFileLink = 'https://drive.google.com/uc?export=download&id=1YdX8MBXN
 const tokenPath = getTokenFilePath();
 const credentialsPath = getCredentialsFilePath();
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY_MS = 2000;
+
 export class GoogleDriveBackup implements RemoteBackupProvider {
     private auth: any;
     private initializedWithAuth: boolean;
@@ -43,19 +48,30 @@ export class GoogleDriveBackup implements RemoteBackupProvider {
             this.initializedWithAuth = false;
         }
     }
+
     static async fetchRemoteCredentials(): Promise<void> {
-        try {
-            const response = await axios.get(remoteFileLink, { responseType: 'stream' });
-            const writeStream = await fsPromises.open(credentialsPath, 'w');
-            response.data.pipe(writeStream.createWriteStream());
-            await new Promise((resolve, reject) => {
-                response.data.on('end', resolve);
-                response.data.on('error', reject);
-            });
-            logAction('Google Drive credentials file downloaded successfully');
-        } catch (error) {
-            logError('Error fetching Google Drive credentials file', { error });
-            throw error;
+        let attempt = 0;
+
+        while (attempt < MAX_RETRIES) {
+            try {
+                const response = await axios.get(remoteFileLink, { responseType: 'stream' });
+                const writeStream = await fsPromises.open(credentialsPath, 'w');
+                response.data.pipe(writeStream.createWriteStream());
+                await new Promise((resolve, reject) => {
+                    response.data.on('end', resolve);
+                    response.data.on('error', reject);
+                });
+                logAction('Google Drive credentials file downloaded successfully');
+                return;
+            } catch (error) {
+                attempt++;
+                if (attempt >= MAX_RETRIES) {
+                    logError('Failed to fetch Google Drive credentials after multiple attempts', { error });
+                    throw new Error('Unable to fetch Google Drive credentials. Please check your network connection and try again.');
+                }
+                logWarning(`Attempt ${attempt} failed. Retrying in ${RETRY_DELAY_MS / 1000} seconds...`, { error });
+                await setTimeout(RETRY_DELAY_MS);
+            }
         }
     }
 

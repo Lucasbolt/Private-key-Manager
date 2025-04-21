@@ -4,8 +4,9 @@ import { ACCESS_TYPE } from "./lib.js";
 import { logAction, logError, logWarning } from '@utils/logger.js';
 
 export interface BackupProvider {
-    new(...args: any[]): any,
-    type: ACCESS_TYPE
+    new(...args: any[]): any;
+    type: ACCESS_TYPE;
+
 }
 export interface GoogleProviderOption extends AUTH_CREDENTIALS {}
 

@@ -1,3 +1,4 @@
+import http from 'http';
 import { getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import fs from 'fs/promises';
 import { google } from 'googleapis';
@@ -57,29 +58,57 @@ export async function getAuthenticatedClient(reload: boolean = false): Promise<a
         const credentials = await loadCredentials();
         const token = await loadToken();
 
-        const { client_id, client_secret, redirect_uris } = credentials.installed;
-        const auth = new google.auth.OAuth2(client_id, client_secret, redirect_uris);
+        const { client_id, client_secret } = credentials.installed;
+        const redirectHost = '127.0.0.1';
 
-        if (!reload && token) {
-            auth.setCredentials(token);
-        } else {
-            const authUrl = auth.generateAuthUrl({
-                access_type: 'offline',
-                scope: SCOPES,
+        const auth = await new Promise<any>((resolve, reject) => {
+            const server = http.createServer(async (req, res) => {
+                if (req.url?.startsWith('/callback')) {
+                    const url = new URL(req.url, `http://${redirectHost}`);
+                    const code = url.searchParams.get('code');
+
+                    res.end('Authorization complete. You can close this window.');
+                    try {
+                        const redirectUri = `http://${redirectHost}:${(server.address() as any).port}/callback`;
+                        const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);
+
+                        const { tokens } = await oauth2Client.getToken(code!);
+                        oauth2Client.setCredentials(tokens);
+                        await saveToken(tokens);
+
+                        logAction('Google Drive authentication completed successfully');
+                        server.close();
+                        resolve(oauth2Client);
+                    } catch (err) {
+                        reject(err);
+                    }
+                }
             });
 
-            logAction('Generated Google Drive authentication URL');
-            console.log(`Open this URL in your browser:\n${authUrl}`);
-            await open(authUrl);
+            server.listen(0, redirectHost, async () => {
+                const port = (server.address() as any).port;
+                const redirectUri = `http://${redirectHost}:${port}/callback`;
 
-            const code = await askQuestion('Enter the authorization code from the browser: ');
+                const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);
 
-            const tokenResponse = await auth.getToken(code);
-            auth.setCredentials(tokenResponse.tokens);
-            await saveToken(tokenResponse.tokens);
-        }
+                if (!reload && token) {
+                    oauth2Client.setCredentials(token);
+                    logAction('Loaded existing Google credentials');
+                    server.close();
+                    resolve(oauth2Client);
+                    return;
+                }
 
-        logAction('Google Drive authentication completed successfully');
+                const authUrl = oauth2Client.generateAuthUrl({
+                    access_type: 'offline',
+                    scope: SCOPES,
+                });
+
+                logAction('Generated Google Drive authentication URL');
+                await open(authUrl);
+            });
+        });
+
         return auth;
     } catch (error) {
         logError('Error during Google Drive authentication', { error });
@@ -87,10 +116,12 @@ export async function getAuthenticatedClient(reload: boolean = false): Promise<a
     }
 }
 
-function askQuestion(query: string): Promise<string> {
-    const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-    return new Promise((resolve) => rl.question(query, (answer) => {
-        rl.close();
-        resolve(answer);
-    }));
-}
+// function askQuestion(query: string): Promise<string> {
+//     const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
+//     return new Promise((resolve) => rl.question(query, (answer) => {
+//         rl.close();
+//         resolve(answer);
+//     }));
+// }
+
+

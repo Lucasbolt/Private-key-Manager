@@ -11,7 +11,9 @@ import inquirer from 'inquirer';
 import { setupMasterPassword, verifyAuthorizationDataExists } from '@services/auth.js';
 import { restoreBackup } from './commands/restoreBackup.js';
 import { cliLogger } from '@utils/cliLogger.js';
+import { getLatestVersion } from '@utils/version.js';
 import { currentLogFile } from '../utils/logger.js';
+
 
 const Banner = async () => {
     try {
@@ -78,9 +80,10 @@ program.hook('preAction', async () => {
     await initializeAuthorizationData();
 });
 
+// Update the version command to fetch the latest version dynamically
 program
     .option('-v, --verbose', 'Enable verbose logging for detailed output')
-    .version('1.0.0')
+    .version(await getLatestVersion())
     .description('A secure and efficient command-line tool for managing private keys.');
 
 program

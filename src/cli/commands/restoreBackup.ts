@@ -18,15 +18,14 @@ interface Options {
 
 export async function restoreBackup(option: Options = { file: undefined }) {
     try {
-        logAction('Restore process started');
-        feedBack.info('Starting the restore process...');
-
         const secretKey = await getVerifiedPassword();
         if (!secretKey) {
             logWarning('Restore process aborted due to failed password verification');
             return;
         }
-
+        logAction('Restore process started');
+        feedBack.info('Starting the restore process...');
+        
         let backupFilePath = option.file;
         if (!option.file) {
             const { backupLocation } = await inquirer.prompt([
