@@ -3,13 +3,13 @@ import { loadEncryptionKey } from '@services/auth.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 
-export async function getPassword(): Promise<string> {
+export async function getPassword(prompt: string | null = null): Promise<string> {
     try {
         const response = await inquirer.prompt([
             {
                 type: 'password',
                 name: 'password',
-                message: 'Enter your password:',
+                message: prompt ?? 'Enter your password:',
                 mask: '*',
             },
         ]);

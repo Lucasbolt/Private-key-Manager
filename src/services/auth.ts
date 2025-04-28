@@ -29,19 +29,19 @@ function generateKey(password: string, salt: Buffer): Buffer {
     return crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha256');
 }
 
-export async function setupMasterPassword(password: string): Promise<void> {
+export async function setupMasterPassword(password: string, reset: boolean = false): Promise<void> {
     if (!password) {
         logError('Password is required for setup');
         return Promise.reject(new Error(ERROR_MESSAGES.PASSWORD_REQUIRED));
     }
-    if (await fileExists(getAuthFilePath())) {
+    if (!reset && await fileExists(getAuthFilePath())) {
         logError('Master password setup attempted but key already exists');
         throw new Error(ERROR_MESSAGES.KEY_EXISTS);
     }
     try {
         const passwordHash = await hashPassword(password);
         const salt = crypto.randomBytes(SALT_LENGTH);
-        generateKey(password, salt);
+        // generateKey(password, salt);
         await fs.writeFile(getAuthFilePath(), JSON.stringify({ salt: salt.toString('hex'), passwordHash }));
         logAction('Master password setup successfully');
     } catch (error) {

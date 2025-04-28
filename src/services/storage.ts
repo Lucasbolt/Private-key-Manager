@@ -65,3 +65,35 @@ export async function deleteKey(alias: string): Promise<void> {
     }
 }
 
+
+// function to list keys in paginated fashion
+export async function listKeysPaginated(cursor: string | null, limit: number): Promise<{ keys: string[], nextCursor: string | null }> {
+    const db = getDbInstance();
+    const keys: string[] = [];
+    let foundCursor = cursor === null ? true : false;
+    let nextCursor: string | null = null;
+
+    try {
+        for await (const key of db.keys({})) {
+            if (!foundCursor) {
+                if (key === cursor) {
+                    foundCursor = true; // Start collecting from the next key
+                }
+                continue;
+            }
+
+            if (keys.length < limit) {
+                keys.push(key);
+            } else {
+                nextCursor = key;
+                break;
+            }
+        }
+
+        logAction('Keys paginated', { fetched: keys.length, nextCursor });
+        return { keys, nextCursor };
+    } catch (error) {
+        logError('Error paginating keys', { error });
+        throw error;
+    }
+}

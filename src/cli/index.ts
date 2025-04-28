@@ -13,6 +13,7 @@ import { restoreBackup } from './commands/restoreBackup.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { getLatestVersion } from '@utils/version.js';
 import { currentLogFile } from '../utils/logger.js';
+import { updatePassword } from './commands/updatePassword.js';
 
 
 const Banner = async () => {
@@ -119,6 +120,11 @@ program
     .description('Restore private keys data from backup files')
     .action(restoreBackup);
 
+program
+    .command('update-password')
+    .description('Update master password with a new one.')
+    .action(updatePassword)
+    
 try {
     program.parse(process.argv);
 } catch (error) {
