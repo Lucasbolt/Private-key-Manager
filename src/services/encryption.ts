@@ -1,8 +1,16 @@
 import crypto from 'crypto';
 import { logAction, logError } from '@utils/logger.js';
+import { getAuthSalt } from './auth';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; 
+
+export interface EncryptedBackupData {
+    encrypted: string;
+    iv: string;
+    authTag: string;
+    salt: string;
+}
 
 /**
  * Encrypts a private key using AES-256-GCM.
@@ -61,7 +69,7 @@ export function decryptKey(secret_key: string, encryptedData: string): string {
 }
 
 
-export function encryptBackup(secretKey: Buffer, data: string): { encrypted: string; iv: string; authTag: string } {
+export function encryptBackup(secretKey: Buffer, data: string, salt: string): EncryptedBackupData {
     try {
         const iv = crypto.randomBytes(IV_LENGTH);
         const cipher = crypto.createCipheriv(ALGORITHM, secretKey, iv);
@@ -73,6 +81,7 @@ export function encryptBackup(secretKey: Buffer, data: string): { encrypted: str
             encrypted,
             iv: iv.toString('hex'),
             authTag: cipher.getAuthTag().toString('hex'),
+            salt
         };
         logAction('Backup data encrypted successfully');
         return result;
@@ -82,15 +91,14 @@ export function encryptBackup(secretKey: Buffer, data: string): { encrypted: str
     }
 }
 
-/**
- * Decrypts backup data using AES-256-GCM
- */
-export function decryptBackup(secretKey: Buffer, encryptedData: { encrypted: string; iv: string; authTag: string }): string {
+
+
+export function decryptBackup(secretKey: Buffer, encryptedData: EncryptedBackupData): string {
     try {
         if (!encryptedData.encrypted || !encryptedData.iv || !encryptedData.authTag) {
             throw new Error('Invalid encrypted data format');
         }
-        const { encrypted, iv, authTag } = encryptedData;
+        const { encrypted, iv, authTag, salt } = encryptedData;
         const decipher = crypto.createDecipheriv(ALGORITHM, secretKey, Buffer.from(iv, 'hex'));
         decipher.setAuthTag(Buffer.from(authTag, 'hex'));
 

@@ -4,7 +4,9 @@ import crypto from 'crypto';
 import { getDbInstance, listKeys, getDbInstance as db } from '../storage.js';
 import { getBackupDir } from '@utils/fileUtils.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
-import { decryptBackup, encryptBackup } from '../encryption.js';
+import { decryptBackup, decryptKey, encryptBackup, EncryptedBackupData, encryptKey } from '../encryption.js';
+import { compareSalt, generateKey, getAuthSalt } from '../auth.js';
+import { getPassword } from '@root/src/cli/commands/utils.js';
 
 export async function backupKeys(secret_key: string, filePath?: string): Promise<string> {
     try {
@@ -21,7 +23,9 @@ export async function backupKeys(secret_key: string, filePath?: string): Promise
         const jsonData = JSON.stringify(backupData, null, 2);
 
         const secretKeyBuffer = crypto.createHash('sha256').update(secret_key).digest();
-        const encryptedData = encryptBackup(secretKeyBuffer, jsonData);
+
+        const salt = await getAuthSalt()
+        const encryptedData = encryptBackup(secretKeyBuffer, jsonData, salt);
 
         const backupFile = filePath || path.join(backupDir, `backup_${new Date().toISOString()}.json.enc`);
         await fs.writeFile(backupFile, JSON.stringify(encryptedData, null, 2), 'utf-8');
@@ -38,25 +42,58 @@ export async function restoreKeys(secret_key: string, filePath: string, overwrit
     const db = getDbInstance();
 
     try {
-        const encryptedData = JSON.parse(await fs.readFile(filePath, 'utf-8'));
+        const fileContent = await fs.readFile(filePath, 'utf-8');
+        const encryptedData: EncryptedBackupData = JSON.parse(fileContent);
 
-        const secretKeyBuffer = crypto.createHash('sha256').update(secret_key).digest();
-        const jsonData = decryptBackup(secretKeyBuffer, encryptedData);
-        const backupData = JSON.parse(jsonData);
+        const isPasswordChanged = !(await compareSalt(encryptedData.salt));
+        let decryptionKey = secret_key;
 
-        for (const [alias, encryptedKey] of Object.entries(backupData)) {
-            const keyExists = await db.get(alias).catch(() => null);
-            if (keyExists && !overwrite) {
-                logWarning(`Key '${alias}' already exists. Skipping.`, { alias });
-                continue;
-            }
-            await db.put(alias, encryptedKey as string);
-            logAction('Key restored successfully', { alias });
+        if (isPasswordChanged) {
+            const oldPassword = await getPassword('Enter password used to backup data');
+            decryptionKey = generateKey(oldPassword, Buffer.from(encryptedData.salt, 'hex')).toString('hex');
         }
 
-        logAction('Restore process completed successfully');
+        const secretKeyBuffer = crypto.createHash('sha256').update(decryptionKey).digest();
+        const decryptedJson = decryptBackup(secretKeyBuffer, encryptedData);
+        const backupData = JSON.parse(decryptedJson);
+
+        if (typeof backupData !== 'object' || backupData === null) {
+            throw new Error('Invalid backup data format.');
+        }
+
+        const ops: { type: 'put'; key: string; value: string }[] = [];
+
+        for (const [alias, encryptedKey] of Object.entries(backupData)) {
+            const normalizedAlias = alias.trim().toLowerCase();
+            const keyExists = await db.get(normalizedAlias).catch(() => null);
+
+            if (keyExists && !overwrite) {
+                logWarning(`Key '${normalizedAlias}' already exists. Skipping.`, { alias: normalizedAlias });
+                continue;
+            }
+
+            let valueToStore: string;
+
+            if (isPasswordChanged) {
+                const decryptedData = decryptKey(decryptionKey, encryptedKey as string);
+                valueToStore = encryptKey(secret_key, decryptedData);
+            } else {
+                valueToStore = encryptedKey as string;
+            }
+
+            ops.push({ type: 'put', key: normalizedAlias, value: valueToStore });
+        }
+
+        if (ops.length > 0) {
+            await db.batch(ops);
+            logAction('Restore completed successfully', { restoredKeys: ops.length });
+        } else {
+            logWarning('No keys were restored.', {});
+        }
+
     } catch (error) {
         logError('Error restoring keys', { filePath, error });
+        console.error(error)
         throw error;
     }
 }

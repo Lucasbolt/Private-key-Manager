@@ -25,7 +25,7 @@ async function verifyHash(password: string, hash: string) {
     return await bcrypt.compare(password, hash)
 }
 
-function generateKey(password: string, salt: Buffer): Buffer {
+export function generateKey(password: string, salt: Buffer): Buffer {
     return crypto.pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, 'sha256');
 }
 
@@ -87,6 +87,27 @@ export async function verifyAuthorizationDataExists (): Promise<boolean> {
         return true
     } catch (error) {
         logError("Error verifying authorization exists", { error })
+        throw error
+    }
+}
+
+
+export async function getAuthSalt ():Promise<string> {
+    try {
+        const authData: AUTH_DATA = JSON.parse(await fs.readFile(getAuthFilePath(), 'utf-8'))
+        return authData.salt
+    } catch (error) {
+        logError('Error loading auth data', { error })
+        throw error 
+    }
+}
+
+export async function compareSalt (salt: string):Promise<boolean> {
+    try {
+        const currentSalt = await getAuthSalt()
+        return salt === currentSalt
+    } catch (error) {
+        logError('Error comparing salts', { error })
         throw error
     }
 }
