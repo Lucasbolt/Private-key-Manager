@@ -11,6 +11,7 @@ Private Key Manager is a secure and efficient CLI tool for managing private keys
 - **Delete Key**: Delete a stored private key.
 - **Backup Keys**: Backup all stored private keys to a local file or cloud storage.
 - **Restore Keys**: Restore private keys from a backup file.
+- **Update Master Password**: Change the master password securely. This generates a new encryption key and re-encrypts all stored keys data in the database.
 
 ## Installation
 
@@ -41,7 +42,7 @@ pkm-cli
 - `delete`: Delete a stored key.
 - `backup`: Backup all keys.
 - `restore`: Restore keys from a backup.
-
+- `update-password`: Update the master password securely.
 
 ## License
 

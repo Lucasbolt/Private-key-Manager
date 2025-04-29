@@ -17,3 +17,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated the CLI `version` command to dynamically fetch the latest version.
 - Made cloud backup optional in the application.
+
+## [2.0.0] - 2025-04-29
+
+### Added
+- Master password update feature: Allows users to change their master password. Changing the password generates a new encryption key, which is used to re-encrypt all stored keys data in the database.
+
+### Changed
+- Backup data now includes the salt used in generating the encryption key for encrypting backup data. This ensures that backup data can always be restored, even if the master password is changed, as long as the user remembers the password used during the backup process.
+
+### Breaking Changes
+- The inclusion of salt in backup data is a backward-incompatible change. Backups created in previous versions (which do not include the salt) cannot be restored using this version.
