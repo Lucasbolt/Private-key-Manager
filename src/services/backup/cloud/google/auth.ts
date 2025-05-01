@@ -2,16 +2,29 @@ import http from 'http';
 import { getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import fs from 'fs/promises';
 import { google } from 'googleapis';
+import { OAuth2Client } from 'google-auth-library';
 import open from 'open';
-import readline from 'readline';
 import { logAction, logError } from '@utils/logger.js';
+import { AddressInfo } from 'net';
 
 const SCOPES = ['https://www.googleapis.com/auth/drive.file'];
-
 const credentialsPath = getCredentialsFilePath();
 const tokenPath = getTokenFilePath();
 
-async function loadCredentials(): Promise<any> {
+export interface GoogleAuthCredentials {
+    installed: {
+        client_id: string;
+        project_id: string;
+        auth_uri: string;
+        token_uri: string;
+        auth_provider_x509_cert_url: string;
+        client_secret: string;
+        redirect_uris: string[];
+    };
+}
+
+
+async function loadCredentials(): Promise<GoogleAuthCredentials> {
     try {
         const credentials = JSON.parse(await fs.readFile(credentialsPath, 'utf8'));
         logAction('Google Drive credentials loaded successfully');
@@ -22,17 +35,18 @@ async function loadCredentials(): Promise<any> {
     }
 }
 
-async function loadToken(): Promise<any> {
+async function loadToken(): Promise<object | null> {
     try {
         const token = JSON.parse(await fs.readFile(tokenPath, 'utf8'));
         return token;
     } catch (error) {
+        logError('Failed to load token', { error })
         // Token file doesn't exist or is invalid
         return null;
     }
 }
 
-async function saveToken(token: any): Promise<void> {
+async function saveToken(token: object): Promise<void> {
     try {
         await fs.writeFile(tokenPath, JSON.stringify(token, null, 2));
         logAction('Token saved to token.json');
@@ -53,7 +67,7 @@ async function saveToken(token: any): Promise<void> {
  * @returns {Promise<any>} A promise that resolves to an authenticated Google OAuth2 client.
  * @throws Will throw an error if authentication fails or if there is an issue with credentials or tokens.
  */
-export async function getAuthenticatedClient(reload: boolean = false): Promise<any> {
+export async function getAuthenticatedClient(reload: boolean = false): Promise<OAuth2Client> {
     try {
         const credentials = await loadCredentials();
         const token = await loadToken();
@@ -61,7 +75,7 @@ export async function getAuthenticatedClient(reload: boolean = false): Promise<a
         const { client_id, client_secret } = credentials.installed;
         const redirectHost = '127.0.0.1';
 
-        const auth = await new Promise<any>((resolve, reject) => {
+        const auth = await new Promise<OAuth2Client>((resolve, reject) => {
             const server = http.createServer(async (req, res) => {
                 if (req.url?.startsWith('/callback')) {
                     const url = new URL(req.url, `http://${redirectHost}`);
@@ -69,7 +83,7 @@ export async function getAuthenticatedClient(reload: boolean = false): Promise<a
 
                     res.end('Authorization complete. You can close this window.');
                     try {
-                        const redirectUri = `http://${redirectHost}:${(server.address() as any).port}/callback`;
+                        const redirectUri = `http://${redirectHost}:${(server.address() as AddressInfo).port}/callback`;
                         const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);
 
                         const { tokens } = await oauth2Client.getToken(code!);
@@ -86,7 +100,7 @@ export async function getAuthenticatedClient(reload: boolean = false): Promise<a
             });
 
             server.listen(0, redirectHost, async () => {
-                const port = (server.address() as any).port;
+                const port = (server.address() as AddressInfo).port;
                 const redirectUri = `http://${redirectHost}:${port}/callback`;
 
                 const oauth2Client = new google.auth.OAuth2(client_id, client_secret, redirectUri);

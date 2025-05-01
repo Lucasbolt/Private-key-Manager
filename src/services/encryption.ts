@@ -1,6 +1,5 @@
 import crypto from 'crypto';
 import { logAction, logError } from '@utils/logger.js';
-import { getAuthSalt } from './auth';
 
 const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12; 
@@ -98,7 +97,7 @@ export function decryptBackup(secretKey: Buffer, encryptedData: EncryptedBackupD
         if (!encryptedData.encrypted || !encryptedData.iv || !encryptedData.authTag) {
             throw new Error('Invalid encrypted data format');
         }
-        const { encrypted, iv, authTag, salt } = encryptedData;
+        const { encrypted, iv, authTag } = encryptedData;
         const decipher = crypto.createDecipheriv(ALGORITHM, secretKey, Buffer.from(iv, 'hex'));
         decipher.setAuthTag(Buffer.from(authTag, 'hex'));
 
@@ -111,13 +110,3 @@ export function decryptBackup(secretKey: Buffer, encryptedData: EncryptedBackupD
         throw error;
     }
 }
-
-
-// const secretKey = crypto.createHash('sha256').update('your-password').digest(); // Ensure consistency
-// const testData = 'Hello, backup!';
-
-// const encryptedData = encryptBackup(secretKey, testData);
-// console.log('Encrypted:', encryptedData);
-
-// const decryptedData = decryptBackup(secretKey, encryptedData);
-// console.log('Decrypted:', decryptedData);

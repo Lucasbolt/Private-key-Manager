@@ -33,10 +33,10 @@ export async function getVerifiedPassword(): Promise<Buffer<ArrayBufferLike> | n
             return secret_key;
         } catch (error) {
             if (remainingAttempts > 0) {
-                logWarning('Invalid password attempt', { attempt, remainingAttempts });
+                logWarning('Invalid password attempt', { attempt, remainingAttempts, error });
                 feedBack.warn(`Invalid password. ${remainingAttempts} attempts left.`);
             } else {
-                logError('Max password attempts reached', { attempt });
+                logError('Max password attempts reached', { attempt, error });
             }
         }
     }

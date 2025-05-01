@@ -1,5 +1,5 @@
 import inquirer from 'inquirer';
-import { deleteKey, getKey, listKeys } from '@services/storage.js';
+import { deleteKey, listKeys } from '@services/storage.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 import { getVerifiedPassword } from './utils.js';
 import { cliLogger } from '@utils/cliLogger.js';

@@ -4,11 +4,11 @@ import { ACCESS_TYPE } from "./lib.js";
 import { logAction, logError, logWarning } from '@utils/logger.js';
 
 export interface BackupProvider {
-    new(...args: any[]): any;
+    // new(...args: any[]): any;
     type: ACCESS_TYPE;
 
 }
-export interface GoogleProviderOption extends AUTH_CREDENTIALS {}
+// export interface GoogleProviderOption extends AUTH_CREDENTIALS {}
 
 export const PROVIDERS: Record<string, BackupProvider> = {
     google_drive: GoogleDriveBackup,
@@ -29,7 +29,7 @@ export function getProvider(provider: string): BackupProvider | null {
 
 export async function createProviderInstance(
     provider: BackupProvider,
-    providerOptions: GoogleProviderOption | null = null
+    providerOptions: AUTH_CREDENTIALS | null = null
 ) {
     try {
         if (provider.type === 'oauth') {

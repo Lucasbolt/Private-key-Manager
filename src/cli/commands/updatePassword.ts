@@ -1,8 +1,8 @@
-import { loadEncryptionKey, setupMasterPassword } from "@root/src/services/auth";
-import { getPassword, getVerifiedPassword } from "./utils";
-import { cliLogger } from "@root/src/utils/cliLogger";
-import { cliFeedback as feedBack } from "@root/src/utils/cliFeedback";
-import { getKey, listKeys, listKeysPaginated, storeKey } from "@root/src/services/storage";
+import { loadEncryptionKey, setupMasterPassword } from "@root/src/services/auth.js";
+import { getPassword, getVerifiedPassword } from "./utils.js";
+import { cliLogger } from "@root/src/utils/cliLogger.js";
+import { cliFeedback as feedBack } from "@root/src/utils/cliFeedback.js";
+import { getKey, listKeysPaginated, storeKey } from "@root/src/services/storage.js";
 
 
 async function confirmNewPassword(attempts: number): Promise<string | null> {

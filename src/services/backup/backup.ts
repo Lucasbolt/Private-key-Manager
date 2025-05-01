@@ -14,7 +14,7 @@ export async function backupKeys(secret_key: string, filePath?: string): Promise
         await fs.mkdir(backupDir, { recursive: true });
 
         const keys = await listKeys();
-        const backupData: Record<string, any> = {};
+        const backupData: Record<string, string> = {};
 
         for (const key of keys) {
             backupData[key] = await db().get(key);

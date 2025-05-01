@@ -1,6 +1,6 @@
 import AWS from 'aws-sdk';
 import fs from 'fs/promises';
-import { ACCESS_TYPE, RemoteBackupProvider } from '../lib';
+import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
 import { logAction, logError } from '@utils/logger';
 
 export class S3Backup implements RemoteBackupProvider {

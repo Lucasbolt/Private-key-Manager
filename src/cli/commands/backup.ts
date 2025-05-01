@@ -3,7 +3,6 @@ import { BackupProvider, createProviderInstance, getProvider, PROVIDERS } from '
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 import { getVerifiedPassword } from './utils.js';
 import { backupKeys } from '@services/backup/backup.js';
-import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
 import path from 'path';
 import { cliLogger } from '@utils/cliLogger.js';
 import { RemoteBackupProvider } from '@root/src/services/backup/cloud/lib.js';

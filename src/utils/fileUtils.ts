@@ -1,5 +1,6 @@
 import fs from 'fs/promises';
 import config from 'src/config.js';
+import { logError } from './logger.js';
 
 export async function fileExists(path: string): Promise<boolean> {
     try {
@@ -7,6 +8,7 @@ export async function fileExists(path: string): Promise<boolean> {
         return true;
     }
     catch (error) {
+        logError('Error occured', { error })
         return false;
     }
 }
