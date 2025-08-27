@@ -11,6 +11,7 @@ interface ParsedFlag {
     short: string | null;
     long: string;
     hasValue: boolean;
+    valueName?: string
 }
 
 interface OptionConfig {
@@ -19,6 +20,7 @@ interface OptionConfig {
     description: string;
     hasValue: boolean;
     defaultValue?: any;
+    valueName?: string;
 }
 
 interface ParsedArgs {
@@ -70,13 +72,14 @@ export class FastCLI {
      * Add global option
      */
     option(flag: string, description: string, defaultValue?: any): this {
-        const { short, long, hasValue } = this.parseFlag(flag);
+        const { short, long, hasValue, valueName } = this.parseFlag(flag);
         this.globalOptions.set(long, {
             short,
             long,
             description,
             hasValue,
-            defaultValue
+            defaultValue,
+            valueName
         });
         return this;
     }
@@ -108,6 +111,7 @@ export class FastCLI {
         let short: string | null = null;
         let long: string = '';
         let hasValue: boolean = false;
+        let valueName: string | undefined = undefined;
 
         for (const part of parts) {
             if (part.startsWith('--')) {
@@ -115,17 +119,19 @@ export class FastCLI {
                 if (match) {
                     long = match[1];
                     hasValue = !!match[2];
+                    valueName = hasValue ? match[2] : valueName;
                 }
             } else if (part.startsWith('-')) {
                 const match = part.match(/^-([a-zA-Z])(?:\s+<(.+)>)?/);
                 if (match) {
                     short = match[1];
                     hasValue = hasValue || !!match[2];
+                    valueName = hasValue ? match[2] : valueName
                 }
             }
         }
 
-        return { short, long, hasValue };
+        return { short, long, hasValue, valueName };
     }
 
     /**
@@ -224,19 +230,21 @@ export class FastCLI {
         optionsMap: Map<string, OptionConfig>
     ): ParsedOption | null {
         let key: string | null = null;
-        let value: string = '';
+        let value: string | undefined = undefined;
         let nextIndex = index + 1;
 
         if (arg.startsWith('--')) {
             // Long option
             const longName = arg.slice(2);
             const option = optionsMap.get(longName);
-            if (option) {
-                key = longName;
-                if (option.hasValue && index + 1 < argv.length && !argv[index + 1].startsWith('-')) {
-                    value = argv[index + 1];
-                    nextIndex = index + 2;
-                }
+            if (!option) {
+                console.error(`fatal: Unknown option '${longName}'`);
+                process.exit(1);
+            }
+            key = longName;
+            if (option.hasValue && index + 1 < argv.length && !argv[index + 1].startsWith('-')) {
+                value = argv[index + 1];
+                nextIndex = index + 2;
             }
         } else if (arg.startsWith('-')) {
             // Short option(s)
@@ -251,7 +259,12 @@ export class FastCLI {
                     break;
                 }
             }
-        }
+
+            if (!key) {
+                console.error(`fatal: Unknown option '${shortFlags}'`);
+                process.exit(1);
+            }
+         }
 
         return key ? { key, value, nextIndex } : null;
     }
@@ -367,15 +380,44 @@ export class Command {
      * Add command option
      */
     option(flag: string, description: string, defaultValue?: any): this {
-        const { short, long, hasValue } = this.cli.parseFlag(flag);
+        const { short, long, hasValue, valueName } = this.cli.parseFlag(flag);
         this.options.set(long, {
             short,
             long,
             description,
             hasValue,
-            defaultValue
+            defaultValue,
+            valueName
         });
         return this;
+    }
+
+    /**
+     * Verify values passed to options flags
+     */
+    private verifyOptionFlagValues(options: Record<string, any>) {
+        Object.keys(options).forEach((key) => {
+            const opt = this.options.get(key);
+    
+            if (!opt || typeof(opt) !== 'object') {
+                console.error(`fatal: Unknown option '${key}'`);
+                process.exit(1);
+            }
+    
+            if (opt.hasValue && (options[key] === undefined || options[key] === null)) {
+                if (opt.defaultValue !== undefined) {
+                    options[key] = opt.defaultValue;
+                } else {
+                    console.error(`fatal: Missing required value for option '--${key}'${opt.valueName ? ` (${opt.valueName})` : ''}`);
+                    process.exit(1);
+                }
+            }
+    
+            if (opt.hasValue && typeof options[key] !== 'string') {
+                console.error(`fatal: Invalid value for option '--${key}'. Expected a string but got ${typeof options[key]}.`);
+                process.exit(1);
+            }
+        });
     }
 
     /**
@@ -391,6 +433,7 @@ export class Command {
      */
     async execute(options: Record<string, any>, args: string[]): Promise<void> {
         if (this.action) {
+            this.verifyOptionFlagValues(options)
             // console.log(options, args)
             await this.action(options, args);
         }
