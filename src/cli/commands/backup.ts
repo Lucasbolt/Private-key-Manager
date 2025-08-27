@@ -1,4 +1,3 @@
-import inquirer from 'inquirer';
 import { BackupProvider, createProviderInstance, getProvider, PROVIDERS } from '@services/backup/cloud/remoteBackup.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 import { getVerifiedPassword } from './utils.js';
@@ -6,12 +5,13 @@ import { backupKeys } from '@services/backup/backup.js';
 import path from 'path';
 import { cliLogger } from '@utils/cliLogger.js';
 import { RemoteBackupProvider } from '@root/src/services/backup/cloud/lib.js';
+import { safePrompt } from '@root/src/utils/processHandlers.js';
 
 async function selectBackupProvider(): Promise<string | null> {
     const providers = Object.keys(PROVIDERS).map((item) => item.toUpperCase().replace(/_/g, ' '))
     providers.push('None (only local backup)')
 
-    const { answer } = await inquirer.prompt([
+    const { answer } = await safePrompt([
         {
             type: 'list',
             name: 'answer',

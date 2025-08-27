@@ -1,45 +1,46 @@
 import fs from 'fs/promises';
-import path from 'path';
 import crypto from 'crypto';
-import { getDbInstance, listKeys, getDbInstance as db } from '../storage.js';
-import { getBackupDir } from '@utils/fileUtils.js';
+import { listKeys } from '../storage.js';
+import { getBackupFilePath } from '@utils/fileUtils.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
 import { decryptBackup, decryptKey, encryptBackup, EncryptedBackupData, encryptKey } from '../encryption.js';
 import { compareSalt, generateKey, getAuthSalt } from '../auth.js';
 import { getPassword } from '@root/src/cli/commands/utils.js';
+import { dbClient } from '@root/src/db.js';
 
 export async function backupKeys(secret_key: string, filePath?: string): Promise<string> {
-    try {
-        const backupDir = getBackupDir();
-        await fs.mkdir(backupDir, { recursive: true });
+  try {
+    const keys = await listKeys();
+    const backupData: Record<string, string> = {};
 
-        const keys = await listKeys();
-        const backupData: Record<string, string> = {};
-
-        for (const key of keys) {
-            backupData[key] = await db().get(key);
-        }
-
-        const jsonData = JSON.stringify(backupData, null, 2);
-
-        const secretKeyBuffer = crypto.createHash('sha256').update(secret_key).digest();
-
-        const salt = await getAuthSalt()
-        const encryptedData = encryptBackup(secretKeyBuffer, jsonData, salt);
-
-        const backupFile = filePath || path.join(backupDir, `backup_${new Date().toISOString()}.json.enc`);
-        await fs.writeFile(backupFile, JSON.stringify(encryptedData, null, 2), 'utf-8');
-
-        logAction('Encrypted backup created successfully', { backupFile });
-        return backupFile;
-    } catch (error) {
-        logError('Error creating backup', { error });
-        throw error;
+    for (const key of keys) {
+      backupData[key] = await dbClient.get(key);
     }
+
+    const jsonData = JSON.stringify(backupData, null, 2);
+
+    const secretKeyBuffer = crypto.createHash("sha256")
+      .update(secret_key)
+      .digest();
+
+    const salt = await getAuthSalt();
+    const encryptedData = encryptBackup(secretKeyBuffer, jsonData, salt);
+
+    const backupFile = await getBackupFilePath(filePath);
+
+    await fs.writeFile(backupFile, JSON.stringify(encryptedData, null, 2), "utf-8");
+
+    logAction("Encrypted backup created successfully", { backupFile });
+    return backupFile;
+  } catch (error) {
+    logError("Error creating backup", { error });
+    throw error;
+  }
 }
 
+
 export async function restoreKeys(secret_key: string, filePath: string, overwrite = false): Promise<void> {
-    const db = getDbInstance();
+    // const db = getDbInstance();
 
     try {
         const fileContent = await fs.readFile(filePath, 'utf-8');
@@ -65,7 +66,7 @@ export async function restoreKeys(secret_key: string, filePath: string, overwrit
 
         for (const [alias, encryptedKey] of Object.entries(backupData)) {
             const normalizedAlias = alias.trim().toLowerCase();
-            const keyExists = await db.get(normalizedAlias).catch(() => null);
+            const keyExists = await dbClient.get(normalizedAlias).catch(() => null);
 
             if (keyExists && !overwrite) {
                 logWarning(`Key '${normalizedAlias}' already exists. Skipping.`, { alias: normalizedAlias });
@@ -85,7 +86,7 @@ export async function restoreKeys(secret_key: string, filePath: string, overwrit
         }
 
         if (ops.length > 0) {
-            await db.batch(ops);
+            await dbClient.batch(ops);
             logAction('Restore completed successfully', { restoredKeys: ops.length });
         } else {
             logWarning('No keys were restored.', {});
@@ -97,3 +98,4 @@ export async function restoreKeys(secret_key: string, filePath: string, overwrit
         throw error;
     }
 }
+

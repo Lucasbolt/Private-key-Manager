@@ -1,6 +1,34 @@
 import fs from 'fs/promises';
+import path from "path";
 import config from 'src/config.js';
 import { logError } from './logger.js';
+
+
+export function safeTimestamp(): string {
+    const d = new Date();
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
+}
+
+export async function getBackupFilePath(filePath?: string): Promise<string> {
+  const suffix = ".enc";
+
+  let backupFile = filePath || path.join(
+    config.BACKUP_DIR,
+    `backup_${safeTimestamp()}${suffix}`
+  );
+
+
+  if (!backupFile.endsWith(suffix)) {
+    backupFile += suffix;
+  }
+
+
+  await fs.mkdir(path.dirname(backupFile), { recursive: true });
+
+  return backupFile;
+}
+
 
 export async function fileExists(path: string): Promise<boolean> {
     try {

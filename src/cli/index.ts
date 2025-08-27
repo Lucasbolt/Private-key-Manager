@@ -1,133 +1,136 @@
 #!/usr/bin/env node
 import 'dotenv/config';
 import chalk from 'chalk';
-import { Command } from 'commander';
-import { addKey } from './commands/addKey.js';
-import { listStoredKeys } from './commands/listKeys.js';
-import { removeKey } from './commands/deleteKey.js';
-import { getKeyCommand } from './commands/getKey.js';
-import { testBackup } from './commands/backup.js';
-import inquirer from 'inquirer';
-import { setupMasterPassword, verifyAuthorizationDataExists } from '@services/auth.js';
-import { restoreBackup } from './commands/restoreBackup.js';
+import { FastCLI } from './fastcli.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { getLatestVersion } from '@utils/version.js';
 import { currentLogFile } from '../utils/logger.js';
-import { updatePassword } from './commands/updatePassword.js';
-
+import { handleShutdown, safePrompt } from '../utils/processHandlers.js';
+import { verifyAuthorizationDataExists, setupMasterPassword } from '@services/auth.js';
 
 const Banner = async () => {
-    try {
-        console.log(chalk.green.bold('=========================================='));
-        console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
-        console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
-        console.log(chalk.green.bold('==========================================\n'));
-    } catch (error) {
-        cliLogger.error('Error displaying banner', (error as Error));
-    }
+    console.log(chalk.green.bold('=========================================='));
+    console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
+    console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
+    console.log(chalk.green.bold('==========================================\n'));
 };
 
-const program = new Command();
 
-async function initializeAuthorizationData() {
-    try {
-        // await ensureStorageDirectory();
-        cliLogger.info('Initializing authorization data...');
+const cli = new FastCLI();
 
-        if (!(await verifyAuthorizationDataExists())) {
-            cliLogger.warn('Authorization data file not found. Starting initialization process.');
 
-            const { password } = await inquirer.prompt([
-                {
-                    type: 'password',
-                    name: 'password',
-                    message: 'Enter a strong password to secure your data: ',
-                    mask: '*',
-                },
-            ]);
+async function initializeAuthorizationData(): Promise<void> {
+    cliLogger.info('Initializing authorization data...');
+    if (!(await verifyAuthorizationDataExists())) {
+        cliLogger.warn('Authorization data not found. Starting initialization...');
 
-            const { confirmPassword } = await inquirer.prompt([
-                {
-                    type: 'password',
-                    name: 'confirmPassword',
-                    message: 'Enter password again: ',
-                    mask: '*',
-                },
-            ]);
+        const { password } = await safePrompt([
+            { type: 'password', name: 'password', message: 'Enter master password:', mask: '*' },
+        ]);
 
-            if (password === confirmPassword) {
-                cliLogger.info('Passwords match. Setting up master password...');
-                await setupMasterPassword(password);
-                cliLogger.success('Master password setup successfully.');
-            } else {
-                cliLogger.error('Passwords do not match. Authorization data initialization failed.');
-                process.exit(1); // Exit the program if initialization fails
-            }
-        } else {
-            cliLogger.info('Authorization data file already exists. Skipping initialization.');
+        const { confirmPassword } = await safePrompt([
+            { type: 'password', name: 'confirmPassword', message: 'Confirm master password:', mask: '*' },
+        ]);
+
+        if (password !== confirmPassword) {
+            cliLogger.error('Passwords do not match.');
+            process.exit(1);
         }
-    } catch (error) {
-        cliLogger.error('Error during authorization data initialization', (error as Error));
-        process.exit(1);
+
+        await setupMasterPassword(password);
+        cliLogger.success('Master password setup successfully.');
     }
 }
 
-// Hook to run initialization before any command
-program.hook('preAction', async () => {
-    if (program.opts().verbose) {
-        process.env.LOG_VERBOSE = 'true'
-    }
-    Banner().catch((error) => cliLogger.error('Error initializing banner', error));
+
+cli.setVersion(getLatestVersion())
+   .setDescription('A secure and efficient command-line tool for managing private keys.')
+   .option('-v, --verbose', 'Enable verbose logging');
+
+
+cli.hook('preAction', async () => {
+    if (cli.opts().verbose) process.env.LOG_VERBOSE = 'true';
+    await Banner();
     await initializeAuthorizationData();
 });
 
-// Update the version command to fetch the latest version dynamically
-program
-    .option('-v, --verbose', 'Enable verbose logging for detailed output')
-    .version(await getLatestVersion())
-    .description('A secure and efficient command-line tool for managing private keys.');
 
-program
-    .command('add')
-    .description('Add a new private key')
-    .action(addKey);
+cli.command('add')
+   .setDescription('Add a new private key')
+   .setAction(async () => {
+       const { addKey } = await import('./commands/addKey.js');
+       await addKey();
+   });
 
-program
-    .command('get')
-    .option('-a, --alias <name>', 'key alias to fetch')
-    .description('Get a stored key')
-    .action(getKeyCommand);
+cli.command('get')
+   .option('-a, --alias <name>', 'key alias to fetch')
+   .setDescription('Get a stored key')
+   .setAction(async (options) => {
+       const { getKeyCommand } = await import('./commands/getKey.js');
+       await getKeyCommand({ alias: options.alias });
+   });
 
-program
-    .command('list')
-    .description('List stored keys')
-    .action(listStoredKeys);
+cli.command('list')
+   .setDescription('List stored keys')
+   .setAction(async () => {
+       const { listStoredKeys } = await import('./commands/listKeys.js');
+       await listStoredKeys();
+   });
 
-program
-    .command('delete')
-    .option('-a, --alias <name>', 'key alias to delete')
-    .description('Delete a stored key')
-    .action(removeKey);
+cli.command('delete')
+   .option('-a, --alias <name>', 'key alias to delete')
+   .setDescription('Delete a stored key')
+   .setAction(async (options) => {
+       const { removeKey } = await import('./commands/deleteKey.js');
+       await removeKey({alias: options.alias});
+   });
 
-program
-    .command('backup')
-    .description('Backup private keys')
-    .action(testBackup);
+cli.command('backup')
+   .setDescription('Backup private keys')
+   .setAction(async () => {
+       const { testBackup } = await import('./commands/backup.js');
+       await testBackup();
+   });
 
-program
-    .command('restore')
-    .option('-f, --file <file_path>', 'file(path) containing(pointing to) backup file.')
-    .description('Restore private keys data from backup files')
-    .action(restoreBackup);
+cli.command('restore')
+   .option('-f, --file <file>', 'backup file path')
+   .setDescription('Restore from backup')
+   .setAction(async (options) => {
+       const { restoreBackup } = await import('./commands/restoreBackup.js');
+       await restoreBackup(options.file);
+   });
 
-program
-    .command('update-password')
-    .description('Update master password with a new one.')
-    .action(updatePassword)
-    
-try {
-    program.parse(process.argv);
-} catch (error) {
-    cliLogger.error('Error executing CLI program', (error as Error));
-    console.error(`Error occured! Check the log file for more detail: ${currentLogFile()}`)
+cli.command('update-password')
+   .setDescription('Update master password')
+   .setAction(async () => {
+       const { updatePassword } = await import('./commands/updatePassword.js');
+       await updatePassword();
+   });
+
+
+
+async function main () {
+    let interrupted = true;
+
+    const cliTask = cli.parse();
+
+    const signalTask = new Promise<void>(resolve => {
+        ['SIGINT', 'SIGTERM'].forEach(sig => {
+            process.on(sig, async () => {
+                if (interrupted) resolve();
+                interrupted = true;
+                cliLogger.warn(`⚠️  Received ${sig}, shutting down gracefully...`);
+                await handleShutdown(sig);
+                process.exit(0)
+            })
+        });
+    })
+
+    await Promise.race([cliTask, signalTask])
 }
+
+
+main().catch(error => {
+    cliLogger.error('Fatal error', error as Error);
+    console.error(`Error! Check log: ${currentLogFile()}`);
+})

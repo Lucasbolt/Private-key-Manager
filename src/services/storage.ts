@@ -1,23 +1,13 @@
-import { Level } from 'level';
 import { encryptKey, decryptKey } from './encryption.js';
-import { getDatabaseDir } from '@utils/fileUtils.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
+import { dbClient } from '../db.js';
 
-let db: Level<string, string>;
-
-// Get or initialize database instance
-export function getDbInstance(): Level<string, string> {
-    if (!db) {
-        db = new Level(getDatabaseDir(), { valueEncoding: 'json' });
-    }
-    return db;
-}
 
 // Store encrypted key
 export async function storeKey(secret_key: string, alias: string, privateKey: string): Promise<void> {
     const normalizedAlias = alias.trim().toLowerCase();
     const encryptedData = encryptKey(secret_key, privateKey);
-    await getDbInstance().put(normalizedAlias, encryptedData);
+    await dbClient.put(normalizedAlias, encryptedData);
     logAction('Key stored', { alias: normalizedAlias });
 }
 
@@ -25,7 +15,7 @@ export async function storeKey(secret_key: string, alias: string, privateKey: st
 export async function getKey(secret_key: string, alias: string): Promise<string | null> {
     try {
         const normalizedAlias = alias.trim().toLowerCase();
-        const encryptedData = await getDbInstance().get(normalizedAlias);
+        const encryptedData = await dbClient.get(normalizedAlias);
         if (!encryptedData) {
             logWarning('Key not found', { alias: normalizedAlias });
             return null;
@@ -42,7 +32,7 @@ export async function getKey(secret_key: string, alias: string): Promise<string 
 export async function listKeys(): Promise<string[]> {
     const keys: string[] = [];
     try {
-        for await (const key of getDbInstance().keys()) {
+        for await (const key of dbClient.keys()) {
             keys.push(key);
         }
         logAction('Keys listed', { count: keys.length });
@@ -57,7 +47,7 @@ export async function listKeys(): Promise<string[]> {
 export async function deleteKey(alias: string): Promise<void> {
     const normalizedAlias = alias.trim().toLowerCase();
     try {
-        await getDbInstance().del(normalizedAlias);
+        await dbClient.del(normalizedAlias);
         logAction('Key deleted', { alias: normalizedAlias });
     } catch (error) {
         logError('Error deleting key', { alias: normalizedAlias, error });
@@ -68,13 +58,12 @@ export async function deleteKey(alias: string): Promise<void> {
 
 // function to list keys in paginated fashion
 export async function listKeysPaginated(cursor: string | null, limit: number): Promise<{ keys: string[], nextCursor: string | null }> {
-    const db = getDbInstance();
     const keys: string[] = [];
     let foundCursor = cursor === null ? true : false;
     let nextCursor: string | null = null;
 
     try {
-        for await (const key of db.keys({})) {
+        for await (const key of dbClient.keys({})) {
             if (!foundCursor) {
                 if (key === cursor) {
                     foundCursor = true; // Start collecting from the next key

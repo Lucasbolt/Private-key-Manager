@@ -1,9 +1,9 @@
-import inquirer from 'inquirer';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
 import { storeKey, getKey } from '@services/storage.js';
 // import { loadEncryptionKey } from '@services/auth.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { getVerifiedPassword } from './utils.js';
+import { safePrompt } from '@root/src/utils/processHandlers.js';
 
 const MIN_KEY_LENGTH = 8;
 const MAX_ATTEMPTS = 3;
@@ -20,7 +20,7 @@ function isValidPrivateKey(privateKey: string): boolean {
  */
 async function promptForPrivateKey(): Promise<string | null> {
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-        const { privateKey } = await inquirer.prompt([
+        const { privateKey } = await safePrompt([
             { type: 'password', name: 'privateKey', message: 'Enter private key:', mask: '*' },
         ]);
 
@@ -43,7 +43,7 @@ async function promptForPrivateKey(): Promise<string | null> {
  */
 export async function addKey() {
     try {
-        const { alias } = await inquirer.prompt([
+        const { alias } = await safePrompt([
             { type: 'input', name: 'alias', message: 'Enter key alias:' },
         ]);
 
@@ -60,7 +60,7 @@ export async function addKey() {
         if (existingKey) {
             feedBack.warn(`Key '${alias}' already exists.`);
             
-            const { overwrite } = await inquirer.prompt([
+            const { overwrite } = await safePrompt([
                 { type: 'confirm', name: 'overwrite', message: 'Do you want to overwrite the existing key?', default: false },
             ]);
 

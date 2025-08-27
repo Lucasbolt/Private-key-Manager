@@ -1,4 +1,3 @@
-import inquirer from 'inquirer';
 import { restoreKeys } from '@services/backup/backup.js';
 import { getProvider, createProviderInstance } from '@services/backup/cloud/remoteBackup.js';
 import { GoogleDriveBackup } from '@services/backup/cloud/google/googlDrive.js';
@@ -8,6 +7,7 @@ import { fileExists, getBackupDir, getTempDir } from '@utils/fileUtils.js';
 import { getVerifiedPassword } from './utils.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
+import { safePrompt } from '@root/src/utils/processHandlers.js';
 
 const LOCAL_BACKUP_DIR = getBackupDir();
 const LOCAL_TEMP_DIR = getTempDir();
@@ -28,7 +28,7 @@ export async function restoreBackup(option: Options = { file: undefined }) {
         
         let backupFilePath = option.file;
         if (!option.file) {
-            const { backupLocation } = await inquirer.prompt([
+            const { backupLocation } = await safePrompt([
                 {
                     type: 'list',
                     name: 'backupLocation',
@@ -45,7 +45,7 @@ export async function restoreBackup(option: Options = { file: undefined }) {
                     return;
                 }
 
-                const { selectedFile } = await inquirer.prompt([
+                const { selectedFile } = await safePrompt([
                     {
                         type: 'list',
                         name: 'selectedFile',
@@ -78,7 +78,7 @@ export async function restoreBackup(option: Options = { file: undefined }) {
                     return;
                 }
 
-                const { selectedRemoteFile } = await inquirer.prompt([
+                const { selectedRemoteFile } = await safePrompt([
                     {
                         type: 'list',
                         name: 'selectedRemoteFile',
@@ -106,7 +106,7 @@ export async function restoreBackup(option: Options = { file: undefined }) {
             return;
         }
 
-        const { overwrite } = await inquirer.prompt([
+        const { overwrite } = await safePrompt([
             {
                 type: 'confirm',
                 name: 'overwrite',

@@ -1,8 +1,8 @@
-import inquirer from 'inquirer';
 import { getKey, listKeys } from "@services/storage.js";
 import { getVerifiedPassword } from "./utils.js";
 import { cliLogger } from '@utils/cliLogger.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
+import { safePrompt } from "@root/src/utils/processHandlers.js";
 
 interface Options {
     alias: string | undefined
@@ -25,7 +25,7 @@ export async function getKeyCommand(options: Options = { alias: undefined}) {
                 return
             }
     
-            const result = await inquirer.prompt([
+            const result = await safePrompt([
                 { 
                     type: 'list',
                     name: 'alias',

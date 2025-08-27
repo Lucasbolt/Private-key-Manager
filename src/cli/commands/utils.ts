@@ -1,11 +1,11 @@
-import inquirer from 'inquirer';
 import { loadEncryptionKey } from '@services/auth.js';
 import { logAction, logError, logWarning } from '@utils/logger.js';
 import { cliFeedback as feedBack } from '@utils/cliFeedback.js';
+import { safePrompt } from '@root/src/utils/processHandlers.js';
 
 export async function getPassword(prompt: string | null = null): Promise<string> {
     try {
-        const response = await inquirer.prompt([
+        const response = await safePrompt([
             {
                 type: 'password',
                 name: 'password',
