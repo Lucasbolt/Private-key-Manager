@@ -5,7 +5,7 @@ import fsPromises from 'fs/promises';
 import path from 'path';
 import axios from 'axios';
 import { setTimeout } from 'timers/promises';
-import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
+import { ACCESS_TYPE, DEFAULT_DIR, RemoteBackupProvider } from '../lib.js';
 import { ERROR_MESSAGES } from '@utils/error.js';
 import { fileExists, getCredentialsFilePath, getTokenFilePath } from '@utils/fileUtils.js';
 import { getAuthenticatedClient } from './auth.js';
@@ -25,7 +25,7 @@ export interface AUTH_CREDENTIALS extends Partial<TOKEN> {
     refresh_token: string
 }
 
-const DEFAULT_DIR = 'PRIVATE-KEY-MANAGER';
+
 const remoteFileLink = 'https://drive.google.com/uc?export=download&id=1YdX8MBXNgqoamf2pXq7EdXbWZte3PcSq'
 const tokenPath = getTokenFilePath();
 const credentialsPath = getCredentialsFilePath();

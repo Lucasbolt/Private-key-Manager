@@ -2,11 +2,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 /**
- * Fast CLI Parser - Zero dependency command-line argument parser (TypeScript)
- * Replaces Commander.js with a lightweight, performant alternative
+ * Fast CLI Parser - Command-line argument parser
  */
 
-// Type definitions
 interface ParsedFlag {
     short: string | null;
     long: string;
@@ -40,7 +38,7 @@ type PreActionHook = () => Promise<void> | void;
 type CommandAction = (options: Record<string, any>, args: string[]) => Promise<void> | void;
 
 /**
- * Fast CLI Parser - Zero dependency command-line argument parser
+ * Fast CLI Parser - Command-line argument parser
  */
 export class FastCLI {
     private commands: Map<string, Command> = new Map();
@@ -117,7 +115,7 @@ export class FastCLI {
             if (part.startsWith('--')) {
                 const match = part.match(/^--([a-zA-Z0-9-]+)(?:\s+<(.+)>)?/);
                 if (match) {
-                    long = match[1];
+                    long = match[1].replace(/-/g, '');
                     hasValue = !!match[2];
                     valueName = hasValue ? match[2] : valueName;
                 }
@@ -235,7 +233,7 @@ export class FastCLI {
 
         if (arg.startsWith('--')) {
             // Long option
-            const longName = arg.slice(2);
+            const longName = arg.slice(2).replace(/-/g, '');
             const option = optionsMap.get(longName);
             if (!option) {
                 console.error(`fatal: Unknown option '${longName}'`);
@@ -339,8 +337,8 @@ export class FastCLI {
         if (parsed.command && this.commands.has(parsed.command)) {
             const command = this.commands.get(parsed.command)!;
             await command.execute(parsed.commandOptions, parsed.args);
-        } else if (parsed.command) {
-            console.error(`Unknown command: ${parsed.command}`);
+        } else if (!parsed.command) {
+            console.error(`pkm-cli: '${argv[0]}' is not a valid command. See 'pkm-cli --help'`);
             process.exit(1);
         }
     }
@@ -460,37 +458,3 @@ export class Command {
         return this.name;
     }
 }
-
-// Usage example and migration from Commander.js:
-/*
-import { FastCLI } from './fastcli.js';
-
-const cli = new FastCLI();
-
-cli.setVersion('1.0.0')
-   .setDescription('A secure and efficient command-line tool for managing private keys.')
-   .option('-v, --verbose', 'Enable verbose logging for detailed output');
-
-cli.hook('preAction', async () => {
-    if (cli.opts().verbose) {
-        process.env.LOG_VERBOSE = 'true';
-    }
-    // ... other pre-action logic
-});
-
-cli.command('add')
-   .setDescription('Add a new private key')
-   .setAction(async (options, args) => {
-       // Your command logic here
-   });
-
-cli.command('get')
-   .option('-a, --alias <name>', 'key alias to fetch')
-   .setDescription('Get a stored key')
-   .setAction(async (options, args) => {
-       // options.alias will contain the alias value
-   });
-
-// Parse and execute
-await cli.parse();
-*/

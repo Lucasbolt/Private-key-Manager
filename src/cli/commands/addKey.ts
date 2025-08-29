@@ -43,19 +43,16 @@ async function promptForPrivateKey(): Promise<string | null> {
  */
 export async function addKey() {
     try {
-        const { alias } = await safePrompt([
-            { type: 'input', name: 'alias', message: 'Enter key alias:' },
-        ]);
-
-        // const { password } = await inquirer.prompt([
-        //     { type: 'password', name: 'password', message: 'Enter your password:', mask: '*' },
-        // ]);
-
         const secretKey = await getVerifiedPassword()
         if (!secretKey) {
             feedBack.warn('Password verification failed. Aborting backup process.')
             return
         }
+
+        const { alias } = await safePrompt([
+            { type: 'input', name: 'alias', message: 'Enter key alias:' },
+        ]);
+        
         const existingKey = await getKey(secretKey.toString(), alias);
         if (existingKey) {
             feedBack.warn(`Key '${alias}' already exists.`);

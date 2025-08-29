@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import 'dotenv/config';
-import chalk from 'chalk';
+// import chalk from 'chalk';
 import { FastCLI } from './fastcli.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { getLatestVersion } from '@utils/version.js';
@@ -8,12 +8,12 @@ import { currentLogFile } from '../utils/logger.js';
 import { handleShutdown, safePrompt } from '../utils/processHandlers.js';
 import { verifyAuthorizationDataExists, setupMasterPassword } from '@services/auth.js';
 
-const Banner = async () => {
-    console.log(chalk.green.bold('=========================================='));
-    console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
-    console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
-    console.log(chalk.green.bold('==========================================\n'));
-};
+// const Banner = async () => {
+//     console.log(chalk.green.bold('=========================================='));
+//     console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
+//     console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
+//     console.log(chalk.green.bold('==========================================\n'));
+// };
 
 
 const cli = new FastCLI();
@@ -50,7 +50,7 @@ cli.setVersion(getLatestVersion())
 
 cli.hook('preAction', async () => {
     if (cli.opts().verbose) process.env.LOG_VERBOSE = 'true';
-    await Banner();
+    // await Banner();
     await initializeAuthorizationData();
 });
 
@@ -86,12 +86,20 @@ cli.command('delete')
    });
 
 cli.command('backup')
-   .setDescription('Backup private keys')
-   .setAction(async () => {
+   .option('-l, --list <provider>', 'List all backups on the machine.', 'local')
+   .setDescription('Backup private keys locally or to cloud drives.')
+   .setAction(async (options) => {
        const { testBackup } = await import('./commands/backup.js');
-       await testBackup();
+       await testBackup({ provider: options.list});
    });
 
+cli.command('export')
+   .setDescription('Export backup file')
+   .option('-o, --output-file <file>', 'File to write the export to.')
+   .setAction(async (options) => {
+    const { exportKeysCommand } = await import('./commands/export.js')
+    await exportKeysCommand({outputFile: options.outputfile})
+   })
 cli.command('restore')
    .option('-f, --file <file>', 'backup file path')
    .setDescription('Restore from backup')

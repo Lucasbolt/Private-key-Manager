@@ -3,6 +3,7 @@ import fs from 'fs/promises';
 import { ACCESS_TYPE, RemoteBackupProvider } from '../lib.js';
 import { logAction, logError } from '@utils/logger';
 
+
 export class S3Backup implements RemoteBackupProvider {
     private s3: AWS.S3;
     private bucketName: string;
@@ -51,5 +52,10 @@ export class S3Backup implements RemoteBackupProvider {
             logError('Error downloading backup from S3', { remotePath, localPath, bucketName: this.bucketName, error });
             throw error;
         }
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    async listFilesInDirectory(directoryName: string, parentId: string | null): Promise<string[] > {
+        return []
     }
 }

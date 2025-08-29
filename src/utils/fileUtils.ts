@@ -10,14 +10,15 @@ export function safeTimestamp(): string {
     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`;
 }
 
-export async function getBackupFilePath(filePath?: string): Promise<string> {
-  const suffix = ".enc";
+export function genBackupFileName (suffix: string = '.enc') {
+    return `backup_${safeTimestamp()}${suffix}`
+}
+
+export async function getBackupFilePath(filePath?: string, suffix:string = '.enc'): Promise<string> {
 
   let backupFile = filePath || path.join(
-    config.BACKUP_DIR,
-    `backup_${safeTimestamp()}${suffix}`
+    config.BACKUP_DIR, genBackupFileName()
   );
-
 
   if (!backupFile.endsWith(suffix)) {
     backupFile += suffix;
