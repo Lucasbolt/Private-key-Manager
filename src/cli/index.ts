@@ -1,19 +1,11 @@
 #!/usr/bin/env node
 import 'dotenv/config';
-// import chalk from 'chalk';
 import { FastCLI } from './fastcli.js';
 import { cliLogger } from '@utils/cliLogger.js';
 import { getLatestVersion } from '@utils/version.js';
 import { currentLogFile } from '../utils/logger.js';
 import { handleShutdown, safePrompt } from '../utils/processHandlers.js';
 import { verifyAuthorizationDataExists, setupMasterPassword } from '@services/auth.js';
-
-// const Banner = async () => {
-//     console.log(chalk.green.bold('=========================================='));
-//     console.log(chalk.yellowBright('🔑 Private Key Manager CLI 🔑'));
-//     console.log(chalk.cyan('Manage your private keys securely and efficiently.'));
-//     console.log(chalk.green.bold('==========================================\n'));
-// };
 
 
 const cli = new FastCLI();
@@ -45,7 +37,7 @@ async function initializeAuthorizationData(): Promise<void> {
 
 cli.setVersion(getLatestVersion())
    .setDescription('A secure and efficient command-line tool for managing private keys.')
-   .option('-v, --verbose', 'Enable verbose logging');
+   .option('-v, --verbose', 'Enable verbose logging.');
 
 
 cli.hook('preAction', async () => {
@@ -56,14 +48,14 @@ cli.hook('preAction', async () => {
 
 
 cli.command('add')
-   .setDescription('Add a new private key')
+   .setDescription('Add a new private key.')
    .setAction(async () => {
        const { addKey } = await import('./commands/addKey.js');
        await addKey();
    });
 
 cli.command('get')
-   .option('-a, --alias <name>', 'key alias to fetch')
+   .option('-a, --alias <name>', 'key alias to fetch.')
    .setDescription('Get a stored key')
    .setAction(async (options) => {
        const { getKeyCommand } = await import('./commands/getKey.js');
@@ -71,14 +63,14 @@ cli.command('get')
    });
 
 cli.command('list')
-   .setDescription('List stored keys')
+   .setDescription('List stored keys.')
    .setAction(async () => {
        const { listStoredKeys } = await import('./commands/listKeys.js');
        await listStoredKeys();
    });
 
 cli.command('delete')
-   .option('-a, --alias <name>', 'key alias to delete')
+   .option('-a, --alias <name>', 'key alias to delete.')
    .setDescription('Delete a stored key')
    .setAction(async (options) => {
        const { removeKey } = await import('./commands/deleteKey.js');
@@ -97,15 +89,16 @@ cli.command('export')
    .setDescription('Export backup file')
    .option('-o, --output-file <file>', 'File to write the export to.')
    .setAction(async (options) => {
-    const { exportKeysCommand } = await import('./commands/export.js')
+    const { exportKeysCommand } = await import('./commands/exportBackup.js')
     await exportKeysCommand({outputFile: options.outputfile})
    })
+
 cli.command('restore')
    .option('-f, --file <file>', 'backup file path')
-   .setDescription('Restore from backup')
+   .setDescription('Restore backups from local storage or supported cloud providers.')
    .setAction(async (options) => {
        const { restoreBackup } = await import('./commands/restoreBackup.js');
-       await restoreBackup(options.file);
+       await restoreBackup({ file: options.file });
    });
 
 cli.command('update-password')
