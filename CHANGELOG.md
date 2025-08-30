@@ -1,3 +1,63 @@
+## 2025-08-30
+### 🚀 Features
+- Refactor backup and restore commands (60d7c9c)
+- Implement key export functionality and enhance backup processes (6652844)
+- Enhance FastCLI option handling with value name and validation checks (5d8c1e3)
+- Refactor CLI to use FastCLI for command parsing and execution (20f217f)
+
+
+
+
+
+
+### 🔹 Other
+- 2.0.1 (3979d51)
+- fix (42c6305)
+- updated readme and changelog files (667db63)
+- 2.0.0 (4d9d407)
+- fixed bugs (ab09097)
+- added password updating feature (8e60976)
+- 1.0.8 (b812fbf)
+- hot fix (fb59ad7)
+- 1.0.7 (4f90466)
+- hot fix (9315568)
+- 1.0.6 (ccb49bd)
+- update (792f356)
+- fixed oauth issues (ee4145a)
+- 1.0.5 (cb58b78)
+- hot fix (a690d87)
+- 1.0.4 (70ddf54)
+- hot fix (639e491)
+- 1.0.3 (d1c3acc)
+- update readme (fffc63e)
+- 1.0.2 (c8c121a)
+- patched logger error (733d4f4)
+- 1.0.1 (7d2639d)
+- hot fix (a8addfb)
+- update readme (dc0d88a)
+- hot fix (8f30c46)
+- ready to publish (37d9733)
+- update (853a535)
+- update (a690c48)
+- improve credentials handling (88b4625)
+- update (500824d)
+- update (a3ade0d)
+- update (3bfb768)
+- updated logging system (75af637)
+- update (529a4a7)
+- update (5060d96)
+- added extra method to googleprovider class (59557fa)
+- implemented google oauth and drive api integration (71f50ca)
+- clean up (510faa5)
+- cleaned up (07732b7)
+- removed .env and node_modules (27ef7fa)
+- added backup services (c59bbef)
+- updated files (ee2c0b3)
+- updated .gitignore (f3ccdaf)
+- first commit (ea564dd)
+- Initial commit (99af2d4)
+
+
 # Changelog
 
 All notable changes to this project will be documented in this file.
