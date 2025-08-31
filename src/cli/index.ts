@@ -78,7 +78,7 @@ cli.command('delete')
    });
 
 cli.command('backup')
-   .option('-l, --list <provider>', 'List all backups on the machine.', 'local')
+   .option('-l, --list <provider>', 'List all backups on the machine.')
    .setDescription('Backup private keys locally or to cloud drives.')
    .setAction(async (options) => {
        const { testBackup } = await import('./commands/backup.js');

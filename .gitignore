@@ -140,3 +140,4 @@ credentials.json
 token.json
 backup-files*
 build*
+src/desktop/
